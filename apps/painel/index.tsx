@@ -3,6 +3,8 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
+import './identity.css';
+import './components/editor/BrandChrome.css';
 
 // Até 15/10/2026 o painel tinha seis cores de destaque à escolha e guardava a
 // escolhida em localStorage. A cor agora é a da marca, fixa; a chave antiga só

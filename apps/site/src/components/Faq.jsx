@@ -105,9 +105,7 @@ export default function Faq() {
   return (
     <section id="duvidas" className="secao faq" aria-labelledby="faq-titulo">
       <div className="faq__grade">
-        <h2 id="faq-titulo" className="h2 reveal">
-          Perguntas que todo dono, gerente e síndico fazem antes de assinar.
-        </h2>
+        <div className="faq__intro reveal"><span className="blocos__eyebrow">ANTES DE LIGAR A SUA TELA</span><h2 id="faq-titulo" className="h2">Tudo claro para dar o próximo passo.</h2><p>Da conexão da TV à escolha do plano. As respostas que ajudam você a começar.</p><div className="faq__photo" role="img" aria-label="Ambiente de trabalho com editor no computador e mensagem de boas-vindas na TV" /></div>
 
         <div className="faq__lista reveal">
           {PERGUNTAS.map(({ pergunta, resposta }) => (

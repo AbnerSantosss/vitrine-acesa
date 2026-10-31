@@ -174,7 +174,9 @@ function App({ url }) {
     if (typeof document === 'undefined') return;
     const alvo = document.querySelector(id);
     if (alvo) {
-      window.scrollTo({ top: alvo.offsetTop - 80, behavior: 'smooth' });
+      const alturaNav = document.querySelector('.navbar')?.getBoundingClientRect().height || 0;
+      const reduzirMovimento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: alvo.getBoundingClientRect().top + window.scrollY - alturaNav, behavior: reduzirMovimento ? 'instant' : 'smooth' });
       return;
     }
     window.location.href = `/${id}`;
@@ -389,7 +391,7 @@ function App({ url }) {
 
       <main id="conteudo">{conteudo}</main>
 
-      <Rodape scrollToSection={irParaSecao} />
+      <Rodape scrollToSection={irParaSecao} abrirContato={() => abrirContato('Atendimento', 'rodape')} />
 
       <LeadModal
         isModalOpen={isModalOpen}

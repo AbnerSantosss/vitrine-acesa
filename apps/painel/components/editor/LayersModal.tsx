@@ -1,17 +1,122 @@
 import React, { useState } from 'react';
-import { 
-  Layers, X, ImageIcon, Film, Type, Clock, CalendarDays, CloudSun, 
-  LayoutDashboard, Rss, Globe, Sparkles, StickyNote, ListTodo, Timer, 
-  ClipboardList, Utensils, TrendingUp, Aperture, FileText, BookOpen, 
-  BarChart3, Code2, Database, Trash2, GripVertical, ArrowUp, ArrowDown,
-  ChevronDown, Eye
+import {
+  Layers, X, ImageIcon, Film, Type, Clock, CalendarDays, CloudSun, LayoutDashboard, Rss, Globe, Sparkles,
+  StickyNote, ListTodo, Timer, ClipboardList, Utensils, TrendingUp, Aperture, FileText, BookOpen, BarChart3,
+  Code2, Database, Trash2, GripVertical, ArrowUp, ArrowDown, Lock, LockOpen, SlidersHorizontal, Shapes, Square, Clapperboard,
 } from 'lucide-react';
-import { Display, Page, WidgetType } from '../../types';
-import { useModalA11y } from '../../hooks/useModalA11y';
+import type { Display, LayoutItem, Page } from '../../types';
+import { WidgetType } from '../../types';
+import { WIDGET_LABELS } from './ScenePreview';
+import './EditorLayout.css';
+
+export type LayerMove = 'up' | 'down' | 'top' | 'bottom';
+
+const BASE_Z = 10;
+const zOf = (w: LayoutItem) => w.data.zIndex ?? BASE_Z;
+
+/** Camadas da frente para o fundo (a mais alta primeiro). Empate: o que vem depois no array fica na frente. */
+export function sortLayersFrontToBack(layout: LayoutItem[]): LayoutItem[] {
+  return layout
+    .map((w, i) => ({ w, i }))
+    .sort((a, b) => (zOf(b.w) - zOf(a.w)) || (b.i - a.i))
+    .map(x => x.w);
+}
+
+/**
+ * Grava a ordem frente-fundo: reatribui zIndex (10 + posição) e devolve o array do fundo para a frente,
+ * de modo que a ordem do array e o zIndex nunca discordem. Não altera objetos recebidos.
+ */
+function applyLayerOrder(frontToBack: LayoutItem[]): LayoutItem[] {
+  const n = frontToBack.length;
+  return frontToBack
+    .map((w, idx) => {
+      const z = BASE_Z + (n - 1 - idx);
+      return w.data.zIndex === z ? w : { ...w, data: { ...w.data, zIndex: z } };
+    })
+    .reverse();
+}
+
+/** Sobe, desce, leva ao topo ou ao fundo. Devolve o mesmo array se nada mudar. */
+export function reorderLayers(layout: LayoutItem[], id: string, move: LayerMove): LayoutItem[] {
+  const sorted = sortLayersFrontToBack(layout);
+  const from = sorted.findIndex(w => w.i === id);
+  if (from === -1) return layout;
+  const last = sorted.length - 1;
+  const to = move === 'up' ? Math.max(0, from - 1) : move === 'down' ? Math.min(last, from + 1) : move === 'top' ? 0 : last;
+  if (to === from) return layout;
+  const [item] = sorted.splice(from, 1);
+  sorted.splice(to, 0, item);
+  return applyLayerOrder(sorted);
+}
+
+/** Arrastar e soltar: leva a camada `id` para a posição da camada `targetId`. */
+export function moveLayerTo(layout: LayoutItem[], id: string, targetId: string): LayoutItem[] {
+  if (id === targetId) return layout;
+  const sorted = sortLayersFrontToBack(layout);
+  const from = sorted.findIndex(w => w.i === id);
+  const to = sorted.findIndex(w => w.i === targetId);
+  if (from === -1 || to === -1) return layout;
+  const [item] = sorted.splice(from, 1);
+  sorted.splice(to, 0, item);
+  return applyLayerOrder(sorted);
+}
+
+const SHAPE_NAMES: Record<string, string> = {
+  rect: 'Retângulo', rounded: 'Retângulo arredondado', circle: 'Círculo', pill: 'Pílula', triangle: 'Triângulo',
+  star: 'Estrela', burst: 'Explosão', line: 'Linha', arrow: 'Seta',
+};
+
+const humanize = (id: string) => id.replace(/[-_]+/g, ' ').replace(/^\w/, c => c.toUpperCase());
+
+/** Nome amigável da camada: o conteúdo quando existe, senão o tipo. */
+export function describeLayer(w: LayoutItem): { name: string; typeLabel: string } {
+  const typeLabel = WIDGET_LABELS[w.type] ?? 'Elemento';
+  let name = typeLabel;
+  if (w.type === WidgetType.TEXT) {
+    const text = (w.data.content ?? '').replace(/\s+/g, ' ').trim();
+    name = text ? (text.length > 36 ? `${text.slice(0, 36)}…` : text) : 'Texto vazio';
+  } else if (w.type === WidgetType.ICON && w.data.iconConfig?.name) {
+    name = humanize(w.data.iconConfig.name);
+  } else if (w.type === WidgetType.SHAPE && w.data.shapeConfig?.kind) {
+    name = SHAPE_NAMES[w.data.shapeConfig.kind] ?? typeLabel;
+  } else if (w.type === WidgetType.MOTION && w.data.motionConfig?.presetId) {
+    name = humanize(w.data.motionConfig.presetId);
+  }
+  return { name, typeLabel };
+}
+
+type IconComp = React.ComponentType<{ size?: number; strokeWidth?: number }>;
+
+const TYPE_VISUAL: Partial<Record<WidgetType, { Icon: IconComp; color: string }>> = {
+  [WidgetType.TEXT]: { Icon: Type, color: '#083d65' },
+  [WidgetType.IMAGE]: { Icon: ImageIcon, color: '#0e7490' },
+  [WidgetType.GIF]: { Icon: Sparkles, color: '#0e7490' },
+  [WidgetType.VIDEO]: { Icon: Film, color: '#0e7490' },
+  [WidgetType.ICON]: { Icon: Shapes, color: '#6d28d9' },
+  [WidgetType.SHAPE]: { Icon: Square, color: '#6d28d9' },
+  [WidgetType.MOTION]: { Icon: Clapperboard, color: '#6d28d9' },
+  [WidgetType.CLOCK]: { Icon: Clock, color: '#b45309' },
+  [WidgetType.CALENDAR]: { Icon: CalendarDays, color: '#b45309' },
+  [WidgetType.WEATHER]: { Icon: CloudSun, color: '#b45309' },
+  [WidgetType.FULL_INFO]: { Icon: LayoutDashboard, color: '#b45309' },
+  [WidgetType.RSS]: { Icon: Rss, color: '#b45309' },
+  [WidgetType.NOTES]: { Icon: StickyNote, color: '#b45309' },
+  [WidgetType.TODO]: { Icon: ListTodo, color: '#b45309' },
+  [WidgetType.COUNTDOWN]: { Icon: Timer, color: '#b45309' },
+  [WidgetType.CHORES]: { Icon: ClipboardList, color: '#b45309' },
+  [WidgetType.MEAL_PLAN]: { Icon: Utensils, color: '#b45309' },
+  [WidgetType.MARKET_WATCH]: { Icon: TrendingUp, color: '#b45309' },
+  [WidgetType.IFRAME]: { Icon: Globe, color: '#475569' },
+  [WidgetType.BROWSER_SNAPSHOT]: { Icon: Aperture, color: '#475569' },
+  [WidgetType.GOOGLE_DOCS]: { Icon: FileText, color: '#475569' },
+  [WidgetType.OFFICE_DOCS]: { Icon: BookOpen, color: '#475569' },
+  [WidgetType.POWER_BI]: { Icon: BarChart3, color: '#475569' },
+  [WidgetType.EMBED_HTML]: { Icon: Code2, color: '#475569' },
+  [WidgetType.AIRTABLE]: { Icon: Database, color: '#475569' },
+  [WidgetType.PDF_DOCUMENT]: { Icon: FileText, color: '#475569' },
+};
 
 interface LayersModalProps {
-  showLayersModal: boolean;
-  setShowLayersModal: React.Dispatch<React.SetStateAction<boolean>>;
   display: Display;
   setDisplay: React.Dispatch<React.SetStateAction<Display | null>>;
   activePageIdx: number;
@@ -19,336 +124,158 @@ interface LayersModalProps {
   selectedWidget: string | null;
   setSelectedWidget: React.Dispatch<React.SetStateAction<string | null>>;
   removeWidget: (wId: string) => void;
+  onEditProperties: () => void;
+  /** Mostra o botão de fechar (o painel volta para a biblioteca). */
+  onClose?: () => void;
+  /** Compatibilidade com o uso antigo: false esconde o painel. */
+  showLayersModal?: boolean;
+  setShowLayersModal?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+/**
+ * Conteúdo do painel Camadas (vai no `layersSlot` da biblioteca à esquerda). Não é mais um bloco fixo
+ * ao lado do canvas, então não espreme a área de edição.
+ */
 export const LayersModal: React.FC<LayersModalProps> = ({
-  showLayersModal,
-  setShowLayersModal,
-  display,
-  setDisplay,
-  activePageIdx,
-  activePage,
-  selectedWidget,
-  setSelectedWidget,
-  removeWidget
+  setDisplay, activePageIdx, activePage, selectedWidget, setSelectedWidget, removeWidget, onEditProperties,
+  onClose, showLayersModal = true, setShowLayersModal,
 }) => {
-  const [draggedLayerId, setDraggedLayerId] = useState<string | null>(null);
-  const [dragOverLayerId, setDragOverLayerId] = useState<string | null>(null);
-  const modalRef = useModalA11y(showLayersModal, () => setShowLayersModal(false));
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   if (!showLayersModal) return null;
+  const close = onClose ?? (setShowLayersModal ? () => setShowLayersModal(false) : undefined);
 
-  const handleLayerDragStart = (e: React.DragEvent<HTMLDivElement>, id: string) => {
-    e.dataTransfer.effectAllowed = 'move';
-    setDraggedLayerId(id);
-  };
+  const layers = sortLayersFrontToBack(activePage.layout);
+  const total = layers.length;
 
-  const handleLayerDragOver = (e: React.DragEvent<HTMLDivElement>, id: string) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (dragOverLayerId !== id) {
-      setDragOverLayerId(id);
-    }
-  };
-
-  const handleLayerDragLeave = () => {
-    setDragOverLayerId(null);
-  };
-
-  const handleLayerDrop = (e: React.DragEvent<HTMLDivElement>, targetId: string) => {
-    e.preventDefault();
-    setDragOverLayerId(null);
-    
-    if (!draggedLayerId || draggedLayerId === targetId) return;
-
-    const updatedPages = [...display.pages];
-    const layout = [...updatedPages[activePageIdx].layout];
-    
-    // Sort layout by zIndex descending (top element first), with array position tiebreaker
-    const sortedLayout = [...layout]
-      .map((w, idx) => ({ ...w, _arrayIdx: idx }))
-      .sort((a, b) => {
-        const zDiff = (b.data.zIndex ?? 10) - (a.data.zIndex ?? 10);
-        return zDiff !== 0 ? zDiff : b._arrayIdx - a._arrayIdx;
-      });
-    
-    const draggedIdx = sortedLayout.findIndex(w => w.i === draggedLayerId);
-    const targetIdx = sortedLayout.findIndex(w => w.i === targetId);
-    
-    if (draggedIdx === -1 || targetIdx === -1) return;
-    
-    // Remove the dragged item
-    const [draggedItem] = sortedLayout.splice(draggedIdx, 1);
-    
-    // Insert at new position
-    sortedLayout.splice(targetIdx, 0, draggedItem);
-    
-    // Recalculate zIndex for all items
-    const newBaseZIndex = 10;
-    sortedLayout.forEach((item, index) => {
-      const layoutItem = layout.find(w => w.i === item.i);
-      if (layoutItem) {
-        layoutItem.data.zIndex = newBaseZIndex + (sortedLayout.length - 1 - index);
-      }
+  const updateLayout = (fn: (layout: LayoutItem[]) => LayoutItem[]) => {
+    setDisplay(d => {
+      if (!d) return d;
+      const page = d.pages[activePageIdx];
+      if (!page) return d;
+      const next = fn(page.layout);
+      if (next === page.layout) return d;
+      return { ...d, pages: d.pages.map((p, i) => (i === activePageIdx ? { ...p, layout: next } : p)) };
     });
-
-    updatedPages[activePageIdx].layout = layout;
-    setDisplay({ ...display, pages: updatedPages });
-    setDraggedLayerId(null);
   };
 
-  const handleLayerDragEnd = () => {
-    setDraggedLayerId(null);
-    setDragOverLayerId(null);
-  };
+  const toggleLock = (id: string) =>
+    updateLayout(layout => layout.map(w => (w.i === id ? { ...w, data: { ...w.data, locked: !w.data.locked } } : w)));
 
-  const getIcon = (type: WidgetType) => {
-    switch (type) {
-      case WidgetType.IMAGE: return <ImageIcon size={14} />;
-      case WidgetType.VIDEO: return <Film size={14} />;
-      case WidgetType.TEXT: return <Type size={14} />;
-      case WidgetType.CLOCK: return <Clock size={14} />;
-      case WidgetType.CALENDAR: return <CalendarDays size={14} />;
-      case WidgetType.WEATHER: return <CloudSun size={14} />;
-      case WidgetType.FULL_INFO: return <LayoutDashboard size={14} />;
-      case WidgetType.RSS: return <Rss size={14} />;
-      case WidgetType.IFRAME: return <Globe size={14} />;
-      case WidgetType.GIF: return <Sparkles size={14} />;
-      case WidgetType.NOTES: return <StickyNote size={14} className="text-warn" />;
-      case WidgetType.TODO: return <ListTodo size={14} className="text-ok" />;
-      case WidgetType.COUNTDOWN: return <Timer size={14} className="text-danger" />;
-      case WidgetType.CHORES: return <ClipboardList size={14} className="text-marca" />;
-      case WidgetType.MEAL_PLAN: return <Utensils size={14} className="text-warn" />;
-      case WidgetType.MARKET_WATCH: return <TrendingUp size={14} className="text-ok" />;
-      case WidgetType.BROWSER_SNAPSHOT: return <Aperture size={14} className="text-marca" />;
-      case WidgetType.GOOGLE_DOCS: return <FileText size={14} className="text-marca" />;
-      case WidgetType.OFFICE_DOCS: return <BookOpen size={14} className="text-marca" />;
-      case WidgetType.POWER_BI: return <BarChart3 size={14} className="text-warn" />;
-      case WidgetType.EMBED_HTML: return <Code2 size={14} className="text-marca" />;
-      case WidgetType.AIRTABLE: return <Database size={14} className="text-danger" />;
-      case WidgetType.PDF_DOCUMENT: return <FileText size={14} className="text-danger" />;
-      default: return <Layers size={14} />;
-    }
-  };
-
-  const getName = (type: WidgetType) => {
-    switch (type) {
-      case WidgetType.IMAGE: return 'Imagem';
-      case WidgetType.VIDEO: return 'Vídeo';
-      case WidgetType.TEXT: return 'Texto';
-      case WidgetType.CLOCK: return 'Relógio';
-      case WidgetType.CALENDAR: return 'Agenda';
-      case WidgetType.WEATHER: return 'Clima';
-      case WidgetType.FULL_INFO: return 'Completo';
-      case WidgetType.RSS: return 'Notícias';
-      case WidgetType.IFRAME: return 'Website';
-      case WidgetType.GIF: return 'GIF';
-      case WidgetType.NOTES: return 'Notas';
-      case WidgetType.TODO: return 'Tarefas';
-      case WidgetType.COUNTDOWN: return 'Contador';
-      case WidgetType.CHORES: return 'Deveres';
-      case WidgetType.MEAL_PLAN: return 'Meal Plan';
-      case WidgetType.MARKET_WATCH: return 'Bolsa';
-      case WidgetType.BROWSER_SNAPSHOT: return 'Snapshot';
-      case WidgetType.GOOGLE_DOCS: return 'G Docs';
-      case WidgetType.OFFICE_DOCS: return 'Office Docs';
-      case WidgetType.POWER_BI: return 'Power BI';
-      case WidgetType.EMBED_HTML: return 'HTML';
-      case WidgetType.AIRTABLE: return 'Airtable';
-      case WidgetType.PDF_DOCUMENT: return 'PDF';
-      default: return 'Widget';
-    }
-  };
-
-  // Sorted layers: top (highest z) first
-  const sortedLayers = [...activePage.layout]
-    .map((w, idx) => ({ ...w, _arrayIdx: idx }))
-    .sort((a, b) => {
-      const zDiff = (b.data.zIndex ?? 10) - (a.data.zIndex ?? 10);
-      return zDiff !== 0 ? zDiff : b._arrayIdx - a._arrayIdx;
-    });
-
-  const totalLayers = sortedLayers.length;
+  const endDrag = () => { setDraggedId(null); setOverId(null); };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-tinta/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div ref={modalRef} role="dialog" aria-modal="true" className="bg-papel border border-borda-2 p-6 rounded-2xl shadow-modal w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
-        <div className="flex items-center justify-between border-b border-borda pb-4 mb-4">
-          <h3 className="text-sm font-bold text-tinta flex items-center gap-2 uppercase tracking-wider">
-            <Layers className="text-marca" size={16} /> Camadas da Cena ({totalLayers})
-          </h3>
-          <button onClick={() => setShowLayersModal(false)} className="text-tinta-3 hover:text-danger transition-colors">
-            <X size={20} />
+    <div className="hub-layers-panel" id="editor-layers" role="region" aria-label="Camadas da cena">
+      <div className="hub-layers-panel__head">
+        <h3 className="hub-layers-panel__title">
+          <Layers size={18} aria-hidden="true" /> Camadas
+          <span className="hub-layers-panel__count" aria-label={`${total} ${total === 1 ? 'camada' : 'camadas'}`}>{total}</span>
+        </h3>
+        {close && (
+          <button type="button" className="hub-layer-btn" aria-label="Fechar painel de camadas" onClick={close}>
+            <X size={18} />
           </button>
-        </div>
-
-        {/* Legenda de sobreposição */}
-        {totalLayers > 1 && (
-          <div className="flex items-center justify-between mb-3 px-1">
-            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-marca">
-              <ArrowUp size={10} /> Frente <span className="text-tinta-3">(sobrepõe)</span>
-            </div>
-            <div className="flex items-center gap-1 text-[9px] text-tinta-3">
-              <Eye size={9} /> Ordem de visibilidade
-            </div>
-            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-tinta-3">
-              <ArrowDown size={10} /> Fundo
-            </div>
-          </div>
-        )}
-        
-        <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar min-h-0">
-          {/* Tree container */}
-          <div className="relative">
-            {sortedLayers.map((layer, index) => {
-              const isSelected = selectedWidget === layer.i;
-              const isDragging = draggedLayerId === layer.i;
-              const isDragOver = dragOverLayerId === layer.i;
-              const isFirst = index === 0;
-              const isLast = index === totalLayers - 1;
-              const depthLevel = totalLayers - index; // highest = front
-
-              // Determine which layers this one covers
-              const coversCount = totalLayers - 1 - index;
-              const coveredByCount = index;
-
-              return (
-                <div key={layer.i} className="relative">
-                  {/* Branch connector line */}
-                  <div className="flex">
-                    {/* Left: vertical tree line + branch node */}
-                    <div className="relative flex flex-col items-center w-7 shrink-0">
-                      {/* Vertical line segment (goes full height except at very top) */}
-                      {!isFirst && (
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-1/2 bg-marca-fundo" />
-                      )}
-                      {!isLast && (
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-px h-1/2 bg-marca-fundo" />
-                      )}
-                      {/* Node dot */}
-                      <div className={`relative z-10 my-auto w-3 h-3 rounded-full border-2 transition-all ${
-                        isSelected 
-                          ? 'bg-marca border-marca' 
-                          : isFirst 
-                            ? 'bg-marca/60 border-marca' 
-                            : isLast
-                              ? 'bg-borda border-borda-3'
-                              : 'bg-papel-3 border-borda-3'
-                      }`} />
-                      {/* Horizontal branch line to card */}
-                      <div className={`absolute top-1/2 left-1/2 w-3 h-px ${isSelected ? 'bg-marca/60' : 'bg-borda'}`} />
-                    </div>
-
-                    {/* Right: the layer card */}
-                    <div
-                      draggable
-                      onDragStart={(e) => handleLayerDragStart(e, layer.i)}
-                      onDragOver={(e) => handleLayerDragOver(e, layer.i)}
-                      onDragLeave={handleLayerDragLeave}
-                      onDrop={(e) => handleLayerDrop(e, layer.i)}
-                      onDragEnd={handleLayerDragEnd}
-                      onClick={() => {
-                        setSelectedWidget(layer.i);
-                        setShowLayersModal(false);
-                      }}
-                      className={`flex-1 flex items-center gap-2.5 p-2.5 rounded-xl cursor-pointer transition-all border mb-1.5 ${
-                        isSelected 
-                          ? 'bg-marca-fundo border-marca text-marca shadow-card' 
-                          : 'bg-papel-2 border-borda hover:border-borda-3 text-tinta-2 hover:bg-papel-3'
-                      } ${isDragging ? 'opacity-40 scale-95' : 'opacity-100'} ${
-                        isDragOver ? 'border-t-2 border-t-marca mt-0.5' : ''
-                      }`}
-                    >
-                      {/* Drag handle */}
-                      <div className="cursor-move text-tinta-3 hover:text-tinta p-0.5 shrink-0">
-                        <GripVertical size={12} />
-                      </div>
-
-                      {/* Z-index depth badge */}
-                      <div className={`shrink-0 w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-black ${
-                        isFirst 
-                          ? 'bg-marca-fundo text-marca ring-1 ring-marca/30' 
-                          : isLast 
-                            ? 'bg-papel-3 text-tinta-3 ring-1 ring-borda-2' 
-                            : 'bg-papel-3 text-tinta-3 ring-1 ring-borda-2'
-                      }`}>
-                        {depthLevel}
-                      </div>
-
-                      {/* Widget icon */}
-                      <div className={`flex items-center justify-center w-7 h-7 rounded-lg border shrink-0 ${
-                        isSelected 
-                          ? 'bg-marca-fundo border-marca/30 text-marca' 
-                          : 'bg-papel-2 border-borda text-tinta-3'
-                      }`}>
-                        {getIcon(layer.type)}
-                      </div>
-
-                      {/* Name + overlap info */}
-                      <div className="flex-1 min-w-0">
-                        <span className="text-xs font-bold truncate block">{getName(layer.type)}</span>
-                        <span className="text-[9px] text-tinta-3 truncate block">
-                          {isFirst && totalLayers > 1 && `Sobrepõe ${coversCount === 1 ? '1 camada' : `${coversCount} camadas`}`}
-                          {isLast && totalLayers > 1 && `Coberto por ${coveredByCount === 1 ? '1 camada' : `${coveredByCount} camadas`}`}
-                          {!isFirst && !isLast && `Sobrepõe ${coversCount} · coberto por ${coveredByCount}`}
-                          {totalLayers === 1 && 'Camada única'}
-                        </span>
-                      </div>
-
-                      {/* Position tag */}
-                      {isFirst && totalLayers > 1 && (
-                        <span className="shrink-0 text-[8px] font-black uppercase tracking-wider bg-marca-fundo text-marca px-1.5 py-0.5 rounded-md border border-marca/30">
-                          Topo
-                        </span>
-                      )}
-                      {isLast && totalLayers > 1 && (
-                        <span className="shrink-0 text-[8px] font-black uppercase tracking-wider bg-papel-3 text-tinta-3 px-1.5 py-0.5 rounded-md border border-borda-2">
-                          Fundo
-                        </span>
-                      )}
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        <button 
-                          onClick={(e) => { 
-                            e.stopPropagation(); 
-                            removeWidget(layer.i); 
-                          }}
-                          className="p-1 hover:bg-danger-fundo text-tinta-3 hover:text-danger rounded-lg transition-colors"
-                          title="Excluir Camada"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                        {isSelected && <div className="w-2 h-2 rounded-full bg-marca animate-pulse ml-0.5"></div>}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* "sobrepõe" arrow indicator between cards */}
-                  {!isLast && (
-                    <div className="flex items-center ml-7 pl-2 -my-0.5">
-                      <ChevronDown size={10} className="text-tinta-3" />
-                      <span className="text-[8px] text-tinta-3 ml-1 font-medium">sobrepõe ↓</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {activePage.layout.length === 0 && (
-            <div className="text-center p-6 border border-dashed border-borda rounded-xl text-tinta-3 text-xs">
-              Nenhuma camada nesta cena.
-            </div>
-          )}
-        </div>
-        
-        {totalLayers > 0 && (
-          <p className="text-[10px] text-tinta-3 mt-4 text-center border-t border-borda pt-3">
-            Arraste as camadas para alterar a ordem. Camadas no topo sobrepõem as de baixo.
-          </p>
         )}
       </div>
+
+      {selectedWidget && (
+        <button type="button" className="hub-layers-props" onClick={onEditProperties}>
+          <SlidersHorizontal size={16} style={{ display: 'inline', marginRight: 8, verticalAlign: '-3px' }} aria-hidden="true" />
+          Editar propriedades
+        </button>
+      )}
+
+      {total > 1 && (
+        <div className="hub-layers-panel__edge" aria-hidden="true">
+          <span>Na frente</span>
+          <span>No fundo</span>
+        </div>
+      )}
+
+      {total === 0 ? (
+        <div className="hub-layers-empty">Nenhum elemento nesta cena. Adicione textos, imagens ou formas pela biblioteca.</div>
+      ) : (
+        <ul className="hub-layers-list" aria-label="Elementos da cena, do que está na frente para o que está no fundo">
+          {layers.map((layer, index) => {
+            const visual = TYPE_VISUAL[layer.type];
+            const Icon: IconComp = visual?.Icon ?? Layers;
+            const { name, typeLabel } = describeLayer(layer);
+            const selected = selectedWidget === layer.i;
+            const locked = !!layer.data.locked;
+            return (
+              <li
+                key={layer.i}
+                className="hub-layer-row"
+                data-selected={selected}
+                data-locked={locked}
+                data-dragging={draggedId === layer.i}
+                data-over={overId === layer.i && draggedId !== layer.i}
+                tabIndex={0}
+                aria-current={selected ? 'true' : undefined}
+                draggable
+                onClick={() => setSelectedWidget(layer.i)}
+                onKeyDown={e => {
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedWidget(layer.i); }
+                  else if (e.altKey && e.key === 'ArrowUp') { e.preventDefault(); updateLayout(l => reorderLayers(l, layer.i, 'up')); }
+                  else if (e.altKey && e.key === 'ArrowDown') { e.preventDefault(); updateLayout(l => reorderLayers(l, layer.i, 'down')); }
+                }}
+                onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', layer.i); setDraggedId(layer.i); }}
+                onDragOver={e => { if (!draggedId) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; if (overId !== layer.i) setOverId(layer.i); }}
+                onDragLeave={() => setOverId(prev => (prev === layer.i ? null : prev))}
+                onDrop={e => {
+                  e.preventDefault();
+                  if (draggedId) updateLayout(l => moveLayerTo(l, draggedId, layer.i));
+                  endDrag();
+                }}
+                onDragEnd={endDrag}
+              >
+                <span className="hub-layer-row__grip" aria-hidden="true"><GripVertical size={16} /></span>
+                <span className="hub-layer-row__icon" style={{ background: visual?.color ?? '#083d65' }} aria-hidden="true">
+                  <Icon size={18} strokeWidth={2.2} />
+                </span>
+                <span className="hub-layer-row__text">
+                  <span className="hub-layer-row__name">{name}</span>
+                  <span className="hub-layer-row__type">
+                    {typeLabel}
+                    {locked ? ' · Travado' : ''}
+                    {total > 1 && index === 0 ? ' · Na frente' : ''}
+                    {total > 1 && index === total - 1 ? ' · No fundo' : ''}
+                  </span>
+                </span>
+                <span className="hub-layer-row__actions">
+                  <button
+                    type="button" className="hub-layer-btn" aria-label={`Trazer ${name} para frente`} title="Trazer para frente"
+                    disabled={index === 0}
+                    onClick={e => { e.stopPropagation(); updateLayout(l => reorderLayers(l, layer.i, 'up')); }}
+                  ><ArrowUp size={16} /></button>
+                  <button
+                    type="button" className="hub-layer-btn" aria-label={`Enviar ${name} para trás`} title="Enviar para trás"
+                    disabled={index === total - 1}
+                    onClick={e => { e.stopPropagation(); updateLayout(l => reorderLayers(l, layer.i, 'down')); }}
+                  ><ArrowDown size={16} /></button>
+                  <button
+                    type="button" className="hub-layer-btn" aria-pressed={locked}
+                    aria-label={locked ? `Destravar ${name}` : `Travar ${name}`} title={locked ? 'Destravar' : 'Travar posição'}
+                    onClick={e => { e.stopPropagation(); toggleLock(layer.i); }}
+                  >{locked ? <Lock size={16} /> : <LockOpen size={16} />}</button>
+                  <button
+                    type="button" className="hub-layer-btn hub-layer-btn--danger" aria-label={`Excluir ${name}`} title="Excluir"
+                    onClick={e => { e.stopPropagation(); removeWidget(layer.i); }}
+                  ><Trash2 size={16} /></button>
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {total > 1 && (
+        <p className="hub-layers-panel__hint">
+          Arraste para mudar a ordem, ou use as setas. O que está no alto da lista aparece na frente dos outros.
+        </p>
+      )}
     </div>
   );
 };

@@ -1,0 +1,72 @@
+/* Painéis da coluna esquerda do editor. Cores e raios vêm do tema do painel (papel, tinta, marca, borda). */
+.hub-panel { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.hub-panel__head { display: flex; align-items: center; gap: .5rem; padding: .75rem .875rem; border-bottom: 1px solid var(--borda, rgba(0,0,0,.12)); }
+.hub-panel__body { flex: 1 1 auto; overflow-y: auto; padding: .875rem; overscroll-behavior: contain; }
+
+/* Miniatura de modelo: ocupa a largura da coluna e mantém a proporção da tela. */
+.hub-thumb { position: relative; width: 100%; overflow: hidden; border-radius: .5rem; container-type: size; background: #0b1b2b; isolation: isolate; }
+.hub-thumb--h { aspect-ratio: 16 / 9; }
+.hub-thumb--v { aspect-ratio: 9 / 16; }
+.hub-thumb__item { position: absolute; display: flex; pointer-events: none; }
+.hub-thumb__item > img { width: 100%; height: 100%; display: block; }
+.hub-thumb__item--text { align-items: center; overflow: visible; }
+.hub-thumb__item--text > p { margin: 0; max-width: 100%; }
+.hub-thumb__motion { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-weight: 800; text-align: center; font-size: 2.4cqw; line-height: 1.1; padding: 4%; box-sizing: border-box; }
+
+.hub-template-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .625rem; }
+.hub-template-grid--v { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.hub-template-card { position: relative; display: block; width: 100%; padding: 0; background: transparent; border: 2px solid transparent; border-radius: .625rem; cursor: pointer; text-align: left; transition: border-color .15s, transform .15s; }
+.hub-template-card:hover, .hub-template-card:focus-visible { border-color: var(--marca, #02c2cd); outline: none; }
+.hub-template-card:active { transform: scale(.98); }
+.hub-template-card__fav { position: absolute; top: .25rem; right: .25rem; z-index: 5; width: 28px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.55); color: #fff; border: 0; cursor: pointer; }
+
+/* Amostra de texto, ícone e forma nos painéis de elementos. */
+.hub-sample { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 16 / 10; overflow: hidden; border-radius: .5rem; container-type: size; background: #0b1b2b; }
+.hub-sample--light { background: #e8eef5; }
+.hub-sample > span, .hub-sample > p { margin: 0; max-width: 92%; text-align: center; }
+
+.hub-icon-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .375rem; }
+.hub-icon-btn { display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 1; min-height: 44px; border-radius: .5rem; background: var(--papel-3, #eef2f6); border: 1px solid var(--borda, rgba(0,0,0,.12)); color: var(--tinta-2, #334155); cursor: pointer; transition: border-color .15s, background .15s; }
+.hub-icon-btn:hover, .hub-icon-btn:focus-visible { border-color: var(--marca, #02c2cd); background: var(--marca-fundo, #e0fafb); outline: none; }
+.hub-icon-btn[aria-pressed="true"] { border-color: var(--marca, #02c2cd); background: var(--marca-fundo, #e0fafb); }
+
+.hub-filter-thumb { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: .5rem; overflow: hidden; border: 2px solid transparent; padding: 0; cursor: pointer; background: #1e293b; }
+.hub-filter-thumb[aria-pressed="true"] { border-color: var(--marca, #02c2cd); }
+.hub-filter-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hub-filter-thumb span { position: absolute; left: 0; right: 0; bottom: 0; padding: .25rem .375rem; font-size: 11px; font-weight: 800; color: #fff; background: linear-gradient(transparent, rgba(0,0,0,.75)); text-align: left; }
+
+.hub-chip-row { display: flex; gap: .375rem; overflow-x: auto; padding-bottom: .25rem; scrollbar-width: thin; }
+.hub-chip { flex: none; min-height: 32px; padding: 0 .75rem; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid var(--borda, rgba(0,0,0,.12)); background: var(--papel-3, #eef2f6); color: var(--tinta-2, #334155); cursor: pointer; white-space: nowrap; }
+.hub-chip[aria-pressed="true"] { background: var(--marca, #02c2cd); border-color: var(--marca, #02c2cd); color: #fff; }
+
+@media (max-width: 767px) {
+  .hub-template-grid--v { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .hub-chip { min-height: 44px; font-size: 14px; }
+  .hub-icon-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .hub-template-grid { grid-template-columns: minmax(0, 1fr); }
+  .hub-template-grid--v { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hub-icon-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (prefers-reduced-motion: reduce) { .hub-template-card { transition: none; } }
+
+/* Trilho vertical + painel do lado esquerdo do editor */
+aside.hub-widget-library.hub-left { display: flex; flex-direction: row; width: min(92vw, 400px); max-width: 100vw; }
+.hub-left__rail { flex: none; width: 72px; display: flex; flex-direction: column; gap: 2px; padding: .5rem .25rem; overflow-y: auto; background: var(--papel-2, #f4f5f7); border-right: 1px solid var(--borda, rgba(0,0,0,.12)); }
+.hub-left__rail-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 56px; min-width: 44px; padding: .25rem; border-radius: .5rem; border: 0; background: transparent; color: var(--tinta-3, #5b6472); font-size: 10px; font-weight: 700; line-height: 1.1; cursor: pointer; transition: background .15s, color .15s; }
+.hub-left__rail-btn:hover { background: var(--papel-3, #e8eaee); color: var(--tinta, #111); }
+.hub-left__rail-btn[aria-pressed="true"] { background: var(--marca-fundo, #e0f7f9); color: var(--marca, #02a8b2); }
+.hub-left__rail-btn:focus-visible { outline: 2px solid var(--marca, #02a8b2); outline-offset: -2px; }
+.hub-left__panel { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+.hub-left__scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+
+@media (min-width: 768px) {
+  aside.hub-widget-library.hub-left { width: 304px; }
+  .hub-left__rail { width: 64px; }
+  .hub-left__rail-btn { min-height: 52px; }
+}
+@media (min-width: 1151px) {
+  aside.hub-widget-library.hub-left { width: 352px; }
+  .hub-left__rail { width: 72px; }
+}

@@ -1,0 +1,44 @@
+/* Login presentation only; authentication and other account pages keep their existing flow. */
+.auth-page.auth-page--login { flex-direction:column; background:var(--auth-papel); }
+.login-header { height:68px; min-height:68px; display:flex; justify-content:space-between; align-items:center; padding:0 clamp(22px,4vw,64px); border-bottom:1px solid var(--auth-linha); background:var(--auth-papel); position:relative; z-index:2; }
+.login-header .auth-marca-nome { color:var(--tinta); }.login-header .auth-marca-nome em { color:var(--marca); }
+.login-header__back { display:flex; align-items:center; gap:8px; color:var(--tinta-3); font-size:13px; text-decoration:none; }
+.login-header a:focus-visible { outline:2px solid var(--marca); outline-offset:5px; border-radius:3px; }
+.auth-page--login .auth-shell { flex:1; min-height:0; }
+.auth-page.auth-page--login .auth-vitrine { padding:clamp(22px,3.4vh,36px) clamp(26px,3.8vw,54px); gap:22px; background-image:radial-gradient(ellipse at 95% 0,rgba(0,150,205,.19),transparent 65%),linear-gradient(145deg,#071c30,#0d3b58); }
+.auth-page--login .auth-vitrine > :first-child { margin-top:0; }.auth-page--login .auth-vitrine > :last-child { margin-bottom:0; }
+.auth-page--login .auth-vitrine-titulo { font-size:clamp(28px,2.8vw,38px); max-width:20ch; letter-spacing:-.04em; line-height:1.1; margin-bottom:11px; }
+.auth-page--login .auth-vitrine-texto { font-size:14px; line-height:1.55; max-width:52ch; }
+.login-showcase { width:100%; min-width:0; }
+.login-showcase__scene { position:relative; width:100%; aspect-ratio:1.8; margin:0; overflow:hidden; border-radius:12px; background:#102c3f; border:1px solid #b2d3e449; box-shadow:0 12px 25px #00152650; }
+.login-showcase__scene > img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity .5s ease; }.login-showcase__scene > img.is-active { opacity:1; }
+.login-showcase__scene figcaption { position:absolute; bottom:0; left:0; right:0; padding:35px 18px 15px; display:flex; justify-content:space-between; align-items:end; gap:15px; background:linear-gradient(transparent,#051b30eb); color:white; }
+.login-showcase__scene b { display:block; font-size:17px; letter-spacing:-.02em; }.login-showcase__scene small { display:block; font-size:11px; line-height:1.45; margin-top:4px; color:#dfedf6; max-width:40ch; }.login-showcase__count { white-space:nowrap; font-size:10px; letter-spacing:.15em; }
+.login-showcase__choices { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:7px; margin-top:12px; }
+.login-showcase__choices button { background:#ffffff08; border:1px solid #ffffff26; border-radius:7px; padding:3px; overflow:hidden; color:#d7e8f2; text-align:left; cursor:pointer; min-width:0; }
+.login-showcase__choices button[aria-pressed="true"] { border-color:#64d6fa; box-shadow:0 0 0 1px #64d6fa; color:white; background:#0b5e82; }
+.login-showcase__choices button:focus-visible { outline:3px solid #9eeaff; outline-offset:3px; }
+.login-showcase__choices img { width:100%; aspect-ratio:1.5; object-fit:cover; border-radius:4px; }.login-showcase__choices span { display:block; font-size:10px; line-height:1.3; padding:6px 3px 3px; min-height:32px; }
+.login-showcase__note { font-size:10px; line-height:1.5; color:#a9c5d9; margin:11px 0 0; }
+.auth-page--login .auth-provas { gap:9px; padding-top:15px; border-top:1px solid #ffffff22; }
+.auth-page--login .auth-provas li { font-size:12px; line-height:1.5; }.auth-page--login .auth-provas svg { width:15px; height:15px; }
+.auth-page.auth-page--login .auth-coluna { position:relative; isolation:isolate; padding:24px clamp(22px,3.7vw,55px); background:linear-gradient(145deg,#f8fcff,#edf6fd); }
+.login-watermark { position:absolute; pointer-events:none; right:-20%; top:10%; width:110%; aspect-ratio:1; opacity:.065; z-index:-1; }
+.login-watermark .brand-symbol { display:block; width:100%!important; height:100%!important; }
+.auth-page--login .auth-cartao { max-width:425px; gap:16px; }
+.login-form-heading { text-align:left; margin-bottom:2px; }
+.login-form-heading > .brand-symbol { margin-bottom:17px; }
+.login-form-heading > span:not(.brand-symbol) { display:block; font-size:10px; font-weight:650; letter-spacing:.15em; color:var(--marca); margin-bottom:8px; }
+.login-form-heading .auth-titulo { font-size:29px; letter-spacing:-.04em; }.login-form-heading .auth-subtitulo { font-size:13px; margin-top:8px; }
+.auth-page--login .auth-caixa { border-radius:15px; background:rgba(255,255,255,.97); box-shadow:0 12px 40px #154c7612; padding:25px; }
+.auth-page--login .auth-dev { margin-top:17px; }
+.auth-page--login .auth-dev summary { cursor:pointer; font-size:11px; font-weight:600; color:#8b511a; min-height:26px; list-style:revert; }
+.auth-page--login .auth-dev:not([open]) { display:block; padding:10px 12px; }
+.auth-page--login .auth-dev summary ~ * { margin-top:8px; }
+.auth-page--login .auth-rodape { font-size:11px; }
+@media(min-width:1000px) { .auth-page--login .auth-shell { grid-template-columns:minmax(0,1.1fr) minmax(440px,.9fr); }.auth-page--login .auth-coluna { overflow-x:hidden; } }
+@media(max-width:999px) { .auth-page--login .auth-shell { display:block; }.auth-page--login .auth-coluna { min-height:calc(100dvh - 68px); overflow:hidden; padding:26px 20px; }.login-header { height:62px; min-height:62px; }.login-form-heading .auth-titulo { font-size:27px; }.auth-page--login .auth-cartao { position:relative; }.login-watermark { width:100%; right:-28%; top:7%; }.login-form-heading > .brand-symbol { margin-bottom:14px; }.auth-page--login .auth-caixa { padding:21px; } }
+@media(max-width:420px) { .login-header__back { font-size:11px; }.login-header .auth-marca-nome { font-size:18px; }.auth-page--login .auth-caixa { padding:18px; }.auth-page--login .auth-linha-opcoes { gap:8px; }.auth-page--login .auth-checkbox,.auth-page--login .auth-linha-opcoes .auth-link { font-size:12px; } }
+@media(prefers-reduced-motion:reduce) { .login-showcase__scene > img { transition:none; } }
+
+@media(min-width:1000px) and (max-height:850px) { .auth-page.auth-page--login .auth-vitrine { gap:16px; padding-top:23px; padding-bottom:23px; }.auth-page--login .auth-vitrine-titulo { font-size:30px; }.login-showcase__scene { aspect-ratio:2; }.auth-page--login .auth-provas { display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; padding-top:12px; }.auth-page--login .auth-provas li:last-child { grid-column:1/-1; }.auth-page--login .auth-provas li { font-size:11px; } }

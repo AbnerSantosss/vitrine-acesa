@@ -208,22 +208,7 @@ const Navbar = ({ scrollToSection, goToPlans }) => {
     >
       <div className="navbar__inner">
         <a className="navbar__marca" href="#topo" aria-label="TelaHub, página inicial">
-          <span className="navbar__logo" aria-hidden="true">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="2" y="5" width="20" height="13" rx="2" />
-              <path d="M8 22h8M12 18v4" />
-            </svg>
-          </span>
-          TelaHub
+          <span className="brand-lockup" role="img" aria-label="Tellas" />
         </a>
 
         <ul className="navbar__links" role="list">

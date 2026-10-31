@@ -20,6 +20,7 @@ import {
   Menu,
   Search,
   ShoppingCart,
+  Sparkles,
   TrendingDown,
   Undo2,
   UserPlus,
@@ -110,6 +111,12 @@ const PLATAFORMA: NavEntry[] = [
     label: 'Leads',
     icon: <UserPlus aria-hidden="true" className={iconClass} />,
     match: (pathname) => pathname.startsWith('/admin/leads'),
+  },
+  {
+    to: '/admin/ia',
+    label: 'IA de criação',
+    icon: <Sparkles aria-hidden="true" className={iconClass} />,
+    match: (pathname) => pathname.startsWith('/admin/ia'),
   },
 ];
 

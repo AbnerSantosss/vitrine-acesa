@@ -61,6 +61,8 @@ const FEATURE_LABEL: Record<string, string> = {
   powerbi:
     'os painéis de gestão (Power BI, Airtable, cotações, snapshot de página e HTML próprio)',
   'agendamento-avancado': 'o agendamento por faixa de horário',
+  videowall: 'o videowall (uma cena espalhada por várias TVs)',
+  'ia-criacao': 'a criação com IA',
 };
 
 export function featureLabel(featureKey: string): string {

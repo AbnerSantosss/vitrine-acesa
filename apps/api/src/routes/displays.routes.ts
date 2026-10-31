@@ -4,7 +4,8 @@ import { requireTenant, TenantScopeError } from '../middlewares/tenant.middlewar
 import { requireActiveSubscription } from '../middlewares/quota.middleware';
 import { validateBody } from '../middlewares/validate.middleware';
 import { saveDisplaySchema } from '../schemas/displays.schema';
-import { displayService } from '../services/display.service';
+import { displayService, normalizeWall } from '../services/display.service';
+import { subscriptionOverrideService } from '../services/subscription-override.service';
 import { sseService } from '../services/sse.service';
 import { auditService } from '../services/audit.service';
 import {
@@ -21,6 +22,9 @@ import { hasFeature } from '../services/plan.service';
 import { buildFeatureDenial, featureDenialMessage } from '../middlewares/feature.middleware';
 
 const router = Router();
+
+/** Feature do plano Enterprise que libera o mural de TVs. */
+const WALL_FEATURE_KEY = 'videowall';
 
 // GET /api/displays — só os displays do tenant do usuário
 router.get('/', authMiddleware, requireTenant, async (req: Request, res: Response): Promise<void> => {
@@ -176,7 +180,39 @@ router.get('/:id', authMiddleware, requireTenant, async (req: Request, res: Resp
 router.post('/', authMiddleware, requireTenant, requireActiveSubscription, validateBody(saveDisplaySchema), async (req: Request, res: Response): Promise<void> => {
   try {
     // `organizationId` do corpo é ignorado de propósito: o escopo vem do token.
-    const { id, name, slug, pages, coverImage, orientation } = req.body;
+    const { id, name, slug, pages, coverImage, orientation, wall } = req.body;
+
+    // Videowall (Enterprise). Só barra quando o pedido CRIA ou MUDA um mural:
+    // quem já tinha um mural e perdeu o plano continua editando o conteúdo dele,
+    // no mesmo espírito dos documentos já publicados. Master passa sempre.
+    const requestedWall = wall === undefined ? undefined : normalizeWall(wall);
+    if (requestedWall && req.tenantId && req.user?.role !== 'master') {
+      const current = id ? await displayService.getByIdScoped(id, req.tenantId) : null;
+      const currentWall = current?.wall ?? null;
+      const changed =
+        !currentWall ||
+        currentWall.cols !== requestedWall.cols ||
+        currentWall.rows !== requestedWall.rows;
+
+      if (changed) {
+        const subscription = await subscriptionService.getByOrganization(req.tenantId);
+        if (
+          subscription &&
+          !hasFeature(subscription, WALL_FEATURE_KEY) &&
+          !(await subscriptionOverrideService.grantsFeature(req.tenantId, WALL_FEATURE_KEY))
+        ) {
+          const denial = await buildFeatureDenial(WALL_FEATURE_KEY, subscription);
+          res.status(403).json({
+            error:
+              'O videowall, que espalha uma cena por várias TVs, faz parte do plano Enterprise. ' +
+              'Fale com a gente para liberar. Suas telas comuns seguem funcionando normalmente.',
+            code: 'feature_not_in_plan',
+            ...denial,
+          });
+          return;
+        }
+      }
+    }
 
     // Direito de uso por conteúdo. Checado no servidor porque o bloqueio no
     // Editor é só conveniência — sem isto, bastava chamar a API direto para
@@ -240,7 +276,7 @@ router.post('/', authMiddleware, requireTenant, requireActiveSubscription, valid
     }
 
     const { display, created } = await displayService.save(
-      { id, name, slug, pages: pages || [], coverImage, orientation },
+      { id, name, slug, pages: pages || [], coverImage, orientation, wall },
       req.tenantId
     );
 

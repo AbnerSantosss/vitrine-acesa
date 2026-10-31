@@ -28,7 +28,7 @@ import {
   getOrganizations,
   getSubscription
 } from '../services/storage';
-import { Display, User, Device, Organization, SubscriptionState } from '../types';
+import { Display, DisplayWall, User, Device, Organization, SubscriptionState } from '../types';
 import { isApiError, getApiErrorMessage, setActiveOrganizationId, getActiveOrganizationId } from '../libs/api';
 import { checkoutUrl } from '../libs/external-urls';
 import { MediaLibrary } from './MediaLibrary';
@@ -109,6 +109,7 @@ const Dashboard: React.FC = () => {
   // Form States
   const [newDisplayName, setNewDisplayName] = useState('');
   const [newDisplayOrientation, setNewDisplayOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+  const [newDisplayWall, setNewDisplayWall] = useState<DisplayWall | null>(null);
 
   // User Invite Form States
   const [inviteEmail, setInviteEmail] = useState('');
@@ -507,6 +508,7 @@ const Dashboard: React.FC = () => {
   const openCreateModal = () => {
     setNewDisplayName('');
     setNewDisplayOrientation('horizontal');
+    setNewDisplayWall(null);
     setIsModalOpen(true);
   };
 
@@ -530,7 +532,8 @@ const Dashboard: React.FC = () => {
         slug,
         pages: [{ id: 'p' + Date.now(), order: 1, duration: 15, layout: [] }],
         updatedAt: Date.now(),
-        orientation: newDisplayOrientation
+        orientation: newDisplayOrientation,
+        wall: newDisplayWall && newDisplayWall.cols * newDisplayWall.rows > 1 ? newDisplayWall : null,
       };
 
       await saveDisplay(newDisplay);
@@ -974,6 +977,9 @@ const Dashboard: React.FC = () => {
         setNewDisplayName={setNewDisplayName}
         newDisplayOrientation={newDisplayOrientation}
         setNewDisplayOrientation={setNewDisplayOrientation}
+        newDisplayWall={newDisplayWall}
+        setNewDisplayWall={setNewDisplayWall}
+        wallAlwaysAllowed={currentUser?.role === 'master'}
         onSubmit={handleCreateConfirm}
       />
 

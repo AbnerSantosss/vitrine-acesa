@@ -16,43 +16,13 @@ import { SITE_URL, checkoutUrlForIntent, isPaidIntent, readPlanIntent } from '..
 // tokens e efeitos do tema claro, antes do CSS da tela
 import './claro.css';
 import './Auth.css';
+import './LoginVisual.css';
+import LoginShowcase from './LoginShowcase';
 
-// Marca do produto: quatro telas ligadas entre si.
-//
-// Continua exportado daqui porque `ForgotPassword`, `ResetPassword` e o
-// `Toolbar` do editor importam este mesmo componente — o Toolbar vive em fundo
-// escuro. Por isso os traços seguem pintados com `var(--brand-accent)` em vez de
-// uma cor fixa: cada tela decide o valor. `Auth.css` redefine a variável dentro
-// de `.auth-page` para o azul da marca (#0369a1), que é legível no fundo claro.
-export const LogoHub: React.FC<{ className?: string; size?: number }> = ({ className = '', size = 48 }) => {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 100 100"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={`${className} relative z-10`}
-      aria-hidden="true"
-      focusable="false"
-    >
-      {/* Grade 2x2: as telas do lugar */}
-      <rect x="15" y="15" width="30" height="24" rx="2" stroke="var(--brand-accent)" strokeWidth="3.5" fill="none" />
-      <rect x="55" y="15" width="30" height="24" rx="2" stroke="var(--brand-accent)" strokeWidth="3.5" fill="none" />
-      <rect x="15" y="53" width="30" height="24" rx="2" stroke="var(--brand-accent)" strokeWidth="3.5" fill="none" />
-      <rect x="55" y="53" width="30" height="32" rx="2" stroke="var(--brand-accent)" strokeWidth="3.5" fill="none" />
-
-      {/* Ligações entre elas */}
-      <path d="M45 27H55" stroke="var(--brand-accent)" strokeWidth="2.5" strokeDasharray="3 3" opacity="0.75" />
-      <path d="M45 65H55" stroke="var(--brand-accent)" strokeWidth="2.5" strokeDasharray="3 3" opacity="0.75" />
-      <path d="M30 39V53" stroke="var(--brand-accent)" strokeWidth="2.5" strokeDasharray="3 3" opacity="0.75" />
-      <path d="M70 39V53" stroke="var(--brand-accent)" strokeWidth="2.5" strokeDasharray="3 3" opacity="0.75" />
-
-      {/* Centro: o painel */}
-      <circle cx="50" cy="46" r="5" fill="var(--brand-accent)" />
-    </svg>
-  );
-};
+// Símbolo original enviado pelo usuário, recortado apenas na apresentação CSS.
+export const LogoHub: React.FC<{ className?: string; size?: number }> = ({ className = '', size = 48 }) => (
+  <span className={`brand-symbol ${className}`} style={{ width: size, height: size }} aria-hidden="true" />
+);
 
 // Atalho de entrada usado SÓ na máquina de desenvolvimento.
 //
@@ -253,35 +223,16 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="auth-page">
+    <div className="auth-page auth-page--login">
+<header className="login-header"><a className="auth-marca" href={`${SITE_URL}/`} aria-label="TelaHub: ir para a página inicial"><span className="brand-lockup" role="img" aria-label="Tellas" /></a><a className="login-header__back" href={`${SITE_URL}/`}><ArrowLeft size={15} aria-hidden="true"/>Voltar ao site</a></header>
       <div className="auth-shell">
         {/* Coluna de continuidade com a landing — só no desktop. */}
         <aside className="auth-vitrine">
-          <a className="auth-marca" href={`${SITE_URL}/`} aria-label="TelaHub: ir para a página inicial">
-            <LogoHub size={34} />
-            <span className="auth-marca-nome">
-              Tela<em>Hub</em>
-            </span>
-          </a>
-
-          <div>
-            <h2 className="auth-vitrine-titulo">Troque o que aparece na sua TV em um minuto.</h2>
-            <p className="auth-vitrine-texto">
-              Entre e troque o aviso, a oferta ou a agenda do dia. O que você publicar aqui aparece
-              na TV do seu lugar na hora.
-            </p>
+<div>
+            <h2 className="auth-vitrine-titulo">Seu negócio tem<br/>muito para mostrar.</h2>
+            <p className="auth-vitrine-texto">Ofertas, novidades e informação nas telas que já fazem parte do seu espaço.</p>
           </div>
-
-          {/* Segmentos em pé de igualdade: o produto é o mesmo em todos. */}
-          <ul className="auth-lugares">
-            <li>Vitrine de loja</li>
-            <li>Balcão da padaria</li>
-            <li>Corredor do mercado</li>
-            <li>Balcão da farmácia</li>
-            <li>Corredor do shopping</li>
-            <li>Sala de espera de clínica</li>
-          </ul>
-
+          <LoginShowcase />
           <ul className="auth-provas">
             <li>
               <Check size={18} aria-hidden="true" />
@@ -299,33 +250,9 @@ const Login: React.FC = () => {
         </aside>
 
         {/* Coluna do formulário */}
-        <main className="auth-coluna">
+        <main className="auth-coluna"><div className="login-watermark" aria-hidden="true"><LogoHub/></div>
           <div className="auth-cartao">
-            <a className="auth-voltar" href={`${SITE_URL}/`}>
-              <ArrowLeft size={16} aria-hidden="true" />
-              Voltar ao site
-            </a>
-
-            <div className="auth-topo-mobile">
-              <a className="auth-logo-link" href={`${SITE_URL}/`} aria-label="TelaHub: ir para a página inicial">
-                <LogoHub size={44} />
-              </a>
-              <div>
-                <h1 className="auth-titulo">Entrar no TelaHub</h1>
-                <p className="auth-subtitulo">Publique o aviso do dia na TV do seu lugar.</p>
-              </div>
-            </div>
-
-            {/* Mesma promessa da landing, palavra por palavra. Quem clicou no
-                anúncio acabou de ler essa frase; repeti-la aqui é o que diz
-                "você chegou no lugar certo". */}
-            <p className="auth-promessa auth-promessa-repetida">
-              <ShieldCheck size={18} aria-hidden="true" />
-              <span>
-                <strong>A primeira tela é grátis para sempre e não pede cartão.</strong>
-              </span>
-            </p>
-
+<div className="login-form-heading"><LogoHub size={42}/><span>TELA DE LOGIN</span><h1 className="auth-titulo">Bem-vindo de volta.</h1><p className="auth-subtitulo">Entre na sua conta para cuidar das suas telas.</p></div>
             <div className="auth-caixa">
               <form onSubmit={handleLogin} noValidate>
                 <fieldset className="auth-form" disabled={loading}>
@@ -433,7 +360,7 @@ const Login: React.FC = () => {
               {/* Bloco de desenvolvimento: some inteiro do bundle publicado
                   porque `import.meta.env.DEV` vira `false` no build. */}
               {SHOW_DEV_LOGIN && (
-                <div className="auth-dev">
+                <details className="auth-dev"><summary>Atalhos de desenvolvimento</summary>
                   <p className="auth-dev-aviso">
                     Atalho de desenvolvimento. Só existe com <code>npm run dev</code> e com as
                     variáveis <code>VITE_DEV_*</code> no <code>.env</code> local.
@@ -449,7 +376,7 @@ const Login: React.FC = () => {
                       {account.label}
                     </button>
                   ))}
-                </div>
+                </details>
               )}
 
               {/* Demonstração por plano: só aparece quando a API tem DEMO_LOGIN=true

@@ -13,8 +13,6 @@ import {
   X, 
   Trash2, 
   Settings, 
-  Monitor, 
-  Smartphone, 
   Check, 
   Copy, 
   ExternalLink 
@@ -134,9 +132,10 @@ export const DisplayCard: React.FC<DisplayCardProps> = ({
             {display.coverImage ? (
               <img src={display.coverImage} alt={display.name} />
             ) : (
-              isVertical 
-                ? <Smartphone size={28} /> 
-                : <Monitor size={36} />
+              <>
+                <img src={`${import.meta.env.BASE_URL}exemplos/${isVertical ? 'arte-moda' : 'arte-cafe'}.jpg`} alt="Exemplo ilustrativo de conteúdo; esta não é uma captura da tela cadastrada." loading="lazy" />
+                <span className="hub-example-label">Exemplo visual</span>
+              </>
             )}
           </div>
         </div>

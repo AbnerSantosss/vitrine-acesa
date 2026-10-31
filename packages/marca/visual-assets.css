@@ -1,0 +1,12 @@
+/* Original supplied PNG, unmodified. Crop only its symbol through CSS. */
+.brand-symbol {
+  display: inline-block; flex: none; width: 32px; height: 32px;
+  background-image: url('./assets/tellas-logo-04.png');
+  background-size: 312% auto; background-position: 0 0;
+  background-repeat: no-repeat; vertical-align: middle;
+}
+:root { --hub-art: url('./assets/diagonais-azuis.jpg'); }
+
+/* Supplied transparent logos; CSS frames only remove the export margins. */
+.brand-lockup {display:inline-block;flex:none;width:120px;height:34px;background:url("./assets/tellas-logo-04.png") 0 0 / 101.063% auto no-repeat;vertical-align:middle;}
+.brand-lockup--white {background-image:url("./assets/tellas-logo-02.png");background-size:166.869% auto;background-position:47.7866% 50.1167%;}

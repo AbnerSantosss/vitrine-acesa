@@ -1,5 +1,6 @@
 import { EVENT, track } from '../lib/tracking';
 import HeroFundo from './HeroFundo';
+import ScreenPlaylist from './ScreenPlaylist';
 import './Hero.css';
 
 /**
@@ -19,13 +20,8 @@ import './Hero.css';
  * (cta_location 'hero_enterprise'). A apresentação por porte (condomínio,
  * escritório, clínica) e a regra "comida nunca abre" saíram desta dobra.
  *
- * ── As três TVs são ilustração declarada, não captura ───────────────────────
- * Elas são desenhadas em HTML com os mesmos blocos que existem hoje no editor
- * (texto, foto, relógio, clima, contador), e a legenda diz isso na cara:
- * "Montadas só com os blocos que existem hoje no editor". Mockup que se
- * apresenta como foto de produto é a mentira mais fácil de cometer numa landing
- * — as capturas REAIS aparecem logo abaixo, em "Como funciona" e "Dois
- * formatos". A terceira TV (totem de shopping) só aparece a partir de 981px (duas colunas).
+ * As três TVs mostram artes ilustrativas de aplicações: cardápio, moda e evento.
+ * As imagens são exemplos de conteúdo, não capturas de clientes.
  *
  * ── UM prazo só na página inteira: 30 segundos ──────────────────────────────
  * A página dizia "5 minutos" no CTA final, "2 minutos" no FAQ e "30 segundos"
@@ -161,54 +157,29 @@ const Hero = ({ startConversion, scrollToSection }) => (
 
     <div className="hero__vitrine">
       <div className="hero__telas">
-        {/* Deitada 16:9 — balcão da padaria */}
         <figure className="hero__figura">
-          <div className="tv" aria-hidden="true">
-            <div className="tv__quadro tv__quadro--deitada">
-              <div className="tv__coluna">
-                <span className="tv__titulo">Padaria Bela Vista</span>
-                <span className="tv__linha">Saindo agora: pão francês</span>
-                <span className="tv__destaque">Café + pão na chapa: R$ 9,90 até as 10h</span>
-              </div>
-              <div className="tv__lado">
-                <div className="tv__bloco">
-                  <strong>09:41</strong>
-                  <span>sáb, 30 ago</span>
-                </div>
-                <div className="tv__bloco">
-                  <strong>26°</strong>
-                  <span>São Paulo</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <figcaption className="cap">TV deitada (16:9) no balcão da padaria</figcaption>
+          <ScreenPlaylist label="Exemplos para padaria, loja, mercado, farmácia e shopping" priority slides={[
+            {src:'/exemplos/arte-cafe.jpg',alt:'Padaria: combo de café da manhã.'},
+            {src:'/exemplos/hero-loja-horizontal.jpg',alt:'Loja: campanha de nova coleção.'},
+            {src:'/exemplos/hero-mercado-horizontal.jpg',alt:'Mercado: oferta de hortifrútis.'},
+            {src:'/exemplos/hero-farmacia-horizontal.jpg',alt:'Farmácia: campanha de cuidados e proteção solar.'},
+            {src:'/exemplos/hero-shopping-horizontal.jpg',alt:'Shopping: programação de cinema.'},
+          ]} />
+          <figcaption className="cap">5 negócios. Uma TV. · 16:9</figcaption>
         </figure>
-
-        {/* Em pé 9:16 — vitrine de loja */}
         <figure className="hero__figura hero__figura--pe">
-          <div className="tv tv--pe" aria-hidden="true">
-            <div className="tv__quadro tv__quadro--pe">
-              <span className="tv__titulo">Liquida de inverno</span>
-              <span className="tv__linha">Jaquetas a partir de R$ 89</span>
-              <span className="tv__destaque">Faltam 3 dias</span>
-              <span className="tv__rodape">09:41 · 26°</span>
-            </div>
-          </div>
-          <figcaption className="cap">TV em pé (9:16) na vitrine da loja</figcaption>
+          <ScreenPlaylist label="Display da loja" portrait slides={[
+            {src:'/exemplos/arte-moda.jpg',alt:'Exemplo de campanha de nova coleção.'},
+            {src:'/exemplos/hero-moda-azul.jpg',alt:'Exemplo de campanha de vestidos leves.'},
+          ]} />
+          <figcaption className="cap">Campanha de loja · 9:16</figcaption>
         </figure>
-
-        {/* Em pé 9:16 — totem de shopping. Só desktop (Hero.css). */}
         <figure className="hero__figura hero__figura--pe hero__figura--totem">
-          <div className="tv tv--pe" aria-hidden="true">
-            <div className="tv__quadro tv__quadro--pe">
-              <span className="tv__titulo">Neste sábado</span>
-              <span className="tv__linha">Oficina infantil, 15h, piso 2</span>
-              <span className="tv__ok">Loja nova no piso 1</span>
-              <span className="tv__rodape">09:41</span>
-            </div>
-          </div>
-          <figcaption className="cap">Totem (9:16) no corredor do shopping</figcaption>
+          <ScreenPlaylist label="Totem do shopping" portrait slides={[
+            {src:'/exemplos/hero-shopping-gastronomia.jpg',alt:'Exemplo de campanha de gastronomia do shopping.'},
+            {src:'/exemplos/hero-shopping-cinema.jpg',alt:'Exemplo de programação de cinema.'},
+          ]} />
+          <figcaption className="cap">Gastronomia e cinema · 9:16</figcaption>
         </figure>
       </div>
 
@@ -221,7 +192,7 @@ const Hero = ({ startConversion, scrollToSection }) => (
       </ul>
 
       <p className="cap">
-        Montadas só com os blocos que existem hoje no editor. Troque o texto e vira o seu negócio.
+        Exemplos de conteúdo. Use suas artes, fotos e ofertas para criar a sua tela.
       </p>
     </div>
   </header>

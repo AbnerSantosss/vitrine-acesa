@@ -503,3 +503,55 @@
   .ctv-wrap-tarefa .ctv-guia { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .ctv-wrap-tarefa .ctv-guia-item { padding: 10px 12px; }
 }
+
+/* Two clear steps, equal columns; optional guidance stays outside the task. */
+.ctv.ctv-tarefa {height:auto;min-height:100dvh;overflow:visible;display:block;padding:32px;background:radial-gradient(ellipse at 10% 0%,#02c2cd16,transparent 55%),linear-gradient(135deg,#f5fbff,#edf3fc);}
+.ctv-wrap.ctv-wrap-tarefa {width:100%;max-width:1180px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto auto;grid-template-areas:"topo topo" "p1 p2" "guia guia";gap:24px;}
+.ctv-wrap-tarefa .ctv-topo {padding:4px 0 8px;}
+.ctv-wrap-tarefa .ctv-subtitulo {font-size:15px;max-width:65ch;margin-top:10px;}
+.ctv-wrap-tarefa .ctv-cartao {padding:28px;border-radius:24px;background:#fff;box-shadow:0 10px 32px #19487507;overflow:visible;}
+.ctv-wrap-tarefa .ctv-p1,.ctv-wrap-tarefa .ctv-p2 {border-top:4px solid #02c2cd;}
+.ctv-wrap-tarefa .ctv-p2 {border-top-color:#2e7ce1;}
+.ctv-wrap-tarefa .ctv-passo {gap:14px;margin-bottom:12px;}
+.ctv-wrap-tarefa .ctv-passo-num {width:44px;height:44px;flex-basis:44px;border-radius:14px;background:#02c2cd;color:#07334d;font-size:22px;}
+.ctv-wrap-tarefa .ctv-p2 .ctv-passo-num {background:#2e7ce1;color:white;}
+.ctv-wrap-tarefa .ctv-passo-titulo {font-size:24px;line-height:1.2;letter-spacing:-.03em;}
+.ctv-wrap-tarefa .ctv-passo-apoio {margin:0 0 24px;font-size:14px;}
+.ctv-wrap-tarefa .ctv-endereco-caixa {padding:22px;flex-basis:100%;background:#f0fafc;border-color:#bce7ed;gap:18px;min-height:216px;justify-content:flex-start;}
+.ctv-wrap-tarefa .ctv-endereco {font-size:clamp(20px,2.3vw,28px);line-height:1.4;}
+.ctv-tv-hint {display:flex;gap:14px;align-items:center;margin:24px 0;color:#125372;}
+.ctv-tv-hint svg {flex-shrink:0;}
+.ctv-tv-hint strong {font-size:15px;}
+.ctv-tv-hint p {font-size:13px;line-height:1.5;color:#566b81;margin:4px 0 0;}
+.ctv-testar {font-size:13px;color:#53677b;margin-top:20px;}
+.ctv-testar summary,.ctv-guia-cartao summary {cursor:pointer;min-height:32px;align-content:center;}
+.ctv-testar .ctv-qr-caixa {margin-top:12px;}
+.ctv-wrap-tarefa .ctv-form {gap:20px;}
+.ctv-wrap-tarefa .ctv-input-codigo {max-width:none;font-size:32px;min-height:86px;background:#f4f8ff;border:2px solid #c3d9f5;}
+.ctv-wrap-tarefa .ctv-estado {margin:0;font-size:12px;background:#f3f7fb;}
+.ctv-wrap-tarefa .ctv-form .ctv-btn-primario {width:100%;justify-content:center;min-height:48px;}
+.ctv-wrap-tarefa .ctv-guia-cartao {padding:18px 24px;box-shadow:none;background:#ffffffaa;}
+.ctv-guia-cartao summary {font-weight:600;font-size:14px;color:#38546e;}
+.ctv-guia-cartao[open] summary {margin-bottom:20px;}
+.ctv-wrap-tarefa .ctv-guia {grid-template-columns:repeat(auto-fit,minmax(190px,1fr));}
+@media(max-width:767px) {
+ .ctv.ctv-tarefa {padding:24px 16px 40px;}
+ .ctv-wrap.ctv-wrap-tarefa {grid-template-columns:minmax(0,1fr);grid-template-areas:"topo" "p1" "p2" "guia";gap:18px;}
+ .ctv-wrap-tarefa .ctv-topo {flex-wrap:wrap;gap:16px;}
+ .ctv-wrap-tarefa .ctv-cartao {padding:20px;border-radius:18px;}
+ .ctv-wrap-tarefa .ctv-passo-titulo {font-size:22px;}
+ .ctv-wrap-tarefa .ctv-grid-2 {grid-template-columns:minmax(0,1fr);}
+ .ctv-wrap-tarefa .ctv-endereco-caixa {padding:16px;min-height:0;}
+ .ctv-wrap-tarefa .ctv-endereco {font-size:21px;}
+ .ctv-wrap-tarefa .ctv-acoes .ctv-btn {min-height:44px;}
+}
+
+/* Address and visible QR share step 1. */
+.ctv-wrap-tarefa .ctv-endereco-linha {display:grid;grid-template-columns:minmax(0,1fr) 162px;gap:14px;align-items:start;}
+.ctv-wrap-tarefa .ctv-endereco-caixa {min-height:0;padding:16px;gap:14px;}
+.ctv-wrap-tarefa .ctv-endereco {font-size:18px;line-height:1.45;overflow-wrap:anywhere;}
+.ctv-wrap-tarefa .ctv-endereco-caixa .ctv-acoes {gap:8px;}
+.ctv-wrap-tarefa .ctv-endereco-caixa .ctv-btn {font-size:12px;padding:9px 10px;min-height:40px;}
+.ctv-wrap-tarefa .ctv-qr-caixa {width:162px;padding:10px;gap:10px;background:white;}
+.ctv-wrap-tarefa .ctv-qr-legenda {font-size:11px;line-height:1.5;max-width:140px;}
+@media(max-width:1100px){.ctv-wrap-tarefa .ctv-endereco-linha{grid-template-columns:minmax(0,1fr);}.ctv-wrap-tarefa .ctv-qr-caixa{justify-self:center;}}

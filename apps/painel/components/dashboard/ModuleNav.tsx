@@ -35,10 +35,11 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
     // dizia nada que as próprias abas não digam.
     <nav
       aria-label="Módulos do painel"
-      className="relative z-10 mb-6 flex h-12 w-full items-end gap-6 overflow-x-auto border-b border-borda px-1 scrollbar-none"
+      className="hub-modules relative z-10 mb-6 flex h-12 w-full items-end gap-6 overflow-x-auto border-b border-borda px-1 scrollbar-none"
     >
 
       <Button
+        aria-label="Central de Programação"
         variant="ghost"
         onClick={() => navigate('/scheduler')}
         className={getNavItemClass(isRouteActive('#/scheduler') || currentHash === '#/')}
@@ -48,6 +49,7 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
       </Button>
 
       <Button
+        aria-label="Mídia"
         variant="ghost"
         onClick={onOpenMediaLibrary}
         className={getNavItemClass(false)}
@@ -57,6 +59,7 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
       </Button>
 
       <Button
+        aria-label="Usuários"
         variant="ghost"
         onClick={onOpenUserManagement}
         className={getNavItemClass(false)}
@@ -66,6 +69,7 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
       </Button>
 
       <Button
+        aria-label="Relatórios"
         variant="ghost"
         onClick={() => navigate('/reports')}
         className={getNavItemClass(isRouteActive('#/reports'))}
@@ -78,6 +82,7 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
           existia dentro de um modal do topo — quem fechasse o modal não achava
           mais. Conectar mais uma TV é operação recorrente, não de instalação. */}
       <Button
+        aria-label="Conectar TV"
         variant="ghost"
         onClick={() => navigate('/conecte-sua-tv')}
         className={getNavItemClass(isRouteActive('#/conecte-sua-tv'))}
@@ -89,6 +94,7 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
       {/* Assinatura fica no menu, e não escondida em "minha conta": cancelamento
           difícil de achar é problema de CDC, não de navegação. */}
       <Button
+        aria-label="Assinatura"
         variant="ghost"
         onClick={() => navigate('/assinatura')}
         className={getNavItemClass(isRouteActive('#/assinatura'))}
@@ -99,6 +105,7 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
 
       {(currentUser?.role === 'admin' || currentUser?.role === 'master') && (
         <Button
+          aria-label="Config. E-mail"
           variant="ghost"
           onClick={onOpenEmailSettings}
           className={getNavItemClass(false)}

@@ -120,3 +120,10 @@
     font-size: 14px;
   }
 }
+
+.pairing-preview.shot { display:flex; flex-direction:column; align-items:center; justify-content:center; aspect-ratio:16/9; padding:30px 20px; background:radial-gradient(ellipse at 70% 0,#0b699b70,transparent 60%),#071d34; border:8px solid #172b3e; border-bottom-width:16px; border-radius:10px; color:#fff; text-align:center; }
+.pairing-preview__brand { display:flex; align-items:center; gap:8px; font-size:19px; letter-spacing:-.04em; margin-bottom:22px; }.pairing-preview__brand .brand-symbol { width:35px; height:35px; }
+.pairing-preview__eyebrow { font-size:8px; letter-spacing:.17em; color:#8edcff; }.pairing-preview h3 { font-size:29px; margin:7px 0; color:#fff; }.pairing-preview p { color:#bad7ec; font-size:11px; line-height:1.6; }
+.pairing-preview__code { display:flex; gap:7px; margin:20px 0 15px; }.pairing-preview__code span { display:grid; place-items:center; width:36px; height:46px; font-size:27px; font-weight:650; color:#84deff; background:#173b59; border:1px solid #347299; border-radius:7px; }
+.pairing-preview > small { display:flex; align-items:center; gap:6px; font-size:8px; color:#91bbd4; }.pairing-preview small i { width:4px; height:4px; border-radius:50%; background:#6ed6fc; }
+@media(max-width:540px) { .pairing-preview.shot { aspect-ratio:auto; padding:25px 12px; }.pairing-preview__brand { margin-bottom:15px; }.pairing-preview h3 { font-size:25px; }.pairing-preview__code { gap:5px; }.pairing-preview__code span { width:30px; height:40px; } }

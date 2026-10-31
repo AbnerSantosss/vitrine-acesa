@@ -22,7 +22,32 @@ export enum WidgetType {
   POWER_BI = 'POWER_BI',
   EMBED_HTML = 'EMBED_HTML',
   AIRTABLE = 'AIRTABLE',
-  PDF_DOCUMENT = 'PDF_DOCUMENT'
+  PDF_DOCUMENT = 'PDF_DOCUMENT',
+  /** Ícone vetorial editável (cor, traço, efeitos). Reestruturação 30/10. */
+  ICON = 'ICON',
+  /** Forma vetorial editável (retângulo, círculo, selo...). */
+  SHAPE = 'SHAPE',
+  /** Motion design em HTML/CSS/JS com campos editáveis, isolado em iframe. */
+  MOTION = 'MOTION'
+}
+
+/** Estado do salvamento automático mostrado na barra do editor. */
+export interface EditorSaveState {
+  state: 'idle' | 'pending' | 'saving' | 'saved' | 'offline' | 'error';
+  /** Último rascunho guardado com sucesso (no servidor ou, offline, no aparelho). */
+  lastSavedAt?: number;
+  /** true quando o último rascunho ficou só no aparelho (sem internet). */
+  localOnly?: boolean;
+}
+
+/** Efeitos visuais comuns a texto, ícone, forma e imagem. */
+export interface WidgetEffects {
+  shadow?: { color?: string; blur?: number; x?: number; y?: number };
+  outline?: { color?: string; width?: number };
+  /** Bloco sólido deslocado atrás do elemento (efeito "carimbo"). */
+  block?: { color?: string; offset?: number };
+  /** Coloca o elemento dentro de um bloco de fundo. */
+  container?: { shape: 'none' | 'square' | 'rect' | 'circle' | 'pill'; color?: string; padding?: number };
 }
 
 export interface RssFeedConfig {
@@ -66,7 +91,47 @@ export interface WidgetData {
   imageConfig?: {
     objectFit?: 'cover' | 'contain' | 'fill';
     scale?: number;
+    /** Filtro pronto (preto e branco, sépia, vintage...). */
+    filter?: 'none' | 'pb' | 'sepia' | 'vintage' | 'quente' | 'frio' | 'vivido' | 'suave' | 'drama' | 'noite';
+    /** Ajustes finos em porcentagem (100 = original). */
+    brightness?: number;
+    contrast?: number;
+    saturation?: number;
+    blur?: number;
+    /** Moldura/recorte da foto. */
+    frame?: 'none' | 'rounded' | 'circle' | 'arch' | 'blob' | 'polaroid';
   };
+  iconConfig?: {
+    /** Nome do ícone no catálogo de IconWidget. */
+    name: string;
+    color?: string;
+    strokeWidth?: number;
+    /** Estilo do ícone: traço (flat) ou preenchido. */
+    variant?: 'stroke' | 'filled';
+  };
+  shapeConfig?: {
+    kind: 'rect' | 'rounded' | 'circle' | 'pill' | 'triangle' | 'star' | 'burst' | 'line' | 'arrow';
+    fill?: string;
+    stroke?: string;
+    strokeWidth?: number;
+  };
+  motionConfig?: {
+    /** Id do preset em presets/motionPresets.ts. */
+    presetId: string;
+    /** Valores dos campos editáveis do preset (texto, preço, link de imagem...). */
+    fields?: Record<string, string>;
+    /** Cores editáveis do preset. */
+    colors?: Record<string, string>;
+    /** Velocidade 0,5 a 2 (1 = normal). */
+    speed?: number;
+  };
+  effects?: WidgetEffects;
+  /** Opacidade do elemento, 0 a 1. */
+  opacity?: number;
+  /** Rotação em graus. */
+  rotation?: number;
+  /** Elemento travado: não move nem redimensiona no editor. */
+  locked?: boolean;
   iframeConfig?: {
     interactive?: boolean;
     scale?: number;
@@ -102,6 +167,17 @@ export interface WidgetData {
     fontStyle?: string; // 'normal', 'italic'
     textAlign?: 'left' | 'center' | 'right';
     animation?: 'none' | 'fade' | 'slide' | 'typewriter' | 'pulse' | 'bounce';
+    textDecoration?: 'none' | 'underline';
+    /** Multiplicador da altura de linha (1 a 2,5). */
+    lineHeight?: number;
+    /** Espaço entre letras em em (-0,1 a 0,5). */
+    letterSpacing?: number;
+    /** Hierarquia escolhida ao adicionar (Título 1, 2, 3 ou texto comum). */
+    textStyle?: 'h1' | 'h2' | 'h3' | 'body';
+    /** Efeito pronto: o texto pode mudar e o efeito continua. */
+    effect?: 'none' | '3d' | 'neon' | 'contorno' | 'sombra-longa' | 'gradiente' | 'retro' | 'destaque' | 'carimbo';
+    effectColor?: string;
+    effectColor2?: string;
   };
   backgroundAnimation?: 'none' | 'auto-weather' | 'gradient-flow' | 'clouds' | 'rain' | 'snow' | 'fire' | 'tech-grid' | 'pulse-red' | 'pulse-blue' | 'pulse-green' | 'aurora';
   transparentBackground?: boolean;
@@ -237,8 +313,21 @@ export interface Display {
   pages: Page[];
   updatedAt: number;
   coverImage?: string;
+  /** Orientação de CADA TV. Num videowall, todas as TVs seguem esta orientação. */
   orientation?: 'horizontal' | 'vertical';
+  /**
+   * Videowall ("Várias TVs", só Enterprise): várias TVs formam uma tela só.
+   * Ausente ou 1×1 = tela comum. Guardado no wrapper de pages, sem coluna nova.
+   */
+  wall?: DisplayWall | null;
   organizationId?: string | null;
+}
+
+export interface DisplayWall {
+  /** TVs lado a lado. */
+  cols: number;
+  /** TVs uma acima da outra. */
+  rows: number;
 }
 
 export interface Organization {
@@ -367,3 +456,6 @@ export interface Broadcast {
   orientation?: 'horizontal' | 'vertical';
   organizationId?: string | null;
 }
+
+/** Painéis que abrem na coluna esquerda do editor (estilo Canva). */
+export type EditorLeftPanel = 'widgets' | 'templates' | 'text' | 'text-effects' | 'effects' | 'image-filters' | 'icons' | 'shapes' | 'motion' | 'ai' | 'ai-edit' | 'layers';

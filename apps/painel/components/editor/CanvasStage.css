@@ -1,0 +1,392 @@
+.hub-editor-workspace .hub-canvas.hub-canvas-stage {
+  position: relative;
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.hub-canvas-stage > .hub-canvas-stage__backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hub-canvas-stage__tools {
+  position: absolute;
+  top: 12px;
+  right: 18px;
+  left: 18px;
+  z-index: 40;
+  min-width: 0;
+}
+
+/* Keep this reserved strip even when no widget is selected. */
+.hub-canvas-stage__viewport {
+  position: absolute;
+  inset: 82px 18px 24px;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.hub-canvas-stage .hub-tv-frame {
+  position: relative;
+  box-sizing: content-box;
+  flex: none;
+  border: 5px solid #152330;
+  border-bottom-width: 11px;
+  border-radius: 10px;
+  background: #05080b;
+  box-shadow: 0 0 0 1px #425160, 0 2px 0 1px #09131d, 0 14px 30px -12px #0c29464d;
+}
+
+.hub-tv-frame::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  width: 13px;
+  height: 2px;
+  border-radius: 2px;
+  background: #89bdcc;
+  box-shadow: 0 0 4px #02c2cd40;
+  transform: translateX(-50%);
+}
+
+.hub-tv-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #000;
+}
+
+.hub-canvas-native {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  transform-origin: top left;
+  isolation: isolate;
+  font-size: 16px;
+}
+
+.hub-canvas-native .hub-canvas-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  transition: none;
+}
+
+.hub-canvas-native .hub-canvas-widget {
+  border: 0;
+  transition: none;
+  touch-action: none;
+}
+
+/* Selection chrome does not change the content box, color, or stacking order. */
+.hub-canvas-widget::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 100000;
+  pointer-events: none;
+}
+
+.hub-canvas-widget.is-selected::after {
+  box-shadow: inset 0 0 0 var(--canvas-outline-width, 2px) #02c2cd;
+}
+
+.hub-canvas-widget__drag-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  cursor: move;
+}
+
+.hub-canvas-widget > .react-resizable-handle {
+  visibility: hidden;
+  width: var(--canvas-handle-size, 18px);
+  height: var(--canvas-handle-size, 18px);
+  z-index: 100001;
+  background: none;
+}
+
+.hub-canvas-widget.is-selected > .react-resizable-handle {
+  visibility: visible;
+}
+
+.hub-canvas-widget > .react-resizable-handle::after {
+  right: 0;
+  bottom: 0;
+  width: 45%;
+  height: 45%;
+  border-color: #02c2cd;
+  border-width: 0 var(--canvas-outline-width, 2px) var(--canvas-outline-width, 2px) 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .hub-canvas-widget:not(.is-selected):hover::after {
+    box-shadow: inset 0 0 0 var(--canvas-outline-width, 2px) #02c2cd70;
+  }
+}
+
+@media (max-width: 767px) {
+  .hub-canvas-stage__tools {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+  }
+
+  .hub-canvas-stage__viewport {
+    inset: 88px 12px 18px;
+  }
+
+  .hub-canvas-stage .hub-canvas-example__caption {
+    font-size: 10px;
+    padding: 6px;
+  }
+
+  .hub-canvas-stage .hub-canvas-example__caption button {
+    min-height: 32px;
+    padding: 4px 8px;
+  }
+}
+
+/* Zoom: a área rola quando a cena fica maior que ela. No modo "Ajustado" não
+   há rolagem e o quadro fica centralizado como antes. */
+.hub-canvas-stage .hub-canvas-stage__viewport {
+  display: block;
+  overflow: hidden;
+}
+
+.hub-canvas-stage .hub-canvas-stage__viewport.is-zoomed {
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.hub-canvas-stage__scroller {
+  display: flex;
+  box-sizing: border-box;
+  width: max-content;
+  height: max-content;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.hub-canvas-stage__viewport.is-zoomed .hub-canvas-stage__scroller {
+  padding: 24px;
+}
+
+.hub-canvas-stage__scroller > .hub-tv-frame {
+  margin: auto;
+}
+
+/* Item travado: não arrasta nem redimensiona. */
+.hub-canvas-widget.is-locked .hub-canvas-widget__drag-surface {
+  cursor: default;
+}
+
+/* Videowall: linhas das divisões entre as TVs. Ficam por cima da cena e não
+   recebem clique. A espessura acompanha o zoom para parecer sempre igual. */
+.hub-canvas-wall-guides {
+  position: absolute;
+  inset: 0;
+  z-index: 100003;
+  pointer-events: none;
+}
+
+.hub-canvas-wall-guides__v,
+.hub-canvas-wall-guides__h {
+  position: absolute;
+  border: 0 dashed #ffc83d;
+  filter: drop-shadow(0 0 calc(1px * var(--canvas-inv-scale, 1)) #000000b3);
+}
+
+.hub-canvas-wall-guides__v {
+  top: 0;
+  bottom: 0;
+  border-left-width: calc(2px * var(--canvas-inv-scale, 1));
+  transform: translateX(-50%);
+}
+
+.hub-canvas-wall-guides__h {
+  left: 0;
+  right: 0;
+  border-top-width: calc(2px * var(--canvas-inv-scale, 1));
+  transform: translateY(-50%);
+}
+
+/* Texto, QR ou telefone em cima da divisão: a moldura das TVs corta o conteúdo. */
+.hub-canvas-widget.is-on-seam::after {
+  outline: calc(2px * var(--canvas-inv-scale, 1)) dashed #f5a524;
+  outline-offset: calc(-2px * var(--canvas-inv-scale, 1));
+}
+
+.hub-canvas-seam-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100002;
+  max-width: 100%;
+  padding: calc(3px * var(--canvas-inv-scale, 1)) calc(7px * var(--canvas-inv-scale, 1));
+  border-radius: 0 0 calc(6px * var(--canvas-inv-scale, 1)) 0;
+  background: #f5a524;
+  color: #2b1a00;
+  font: 700 calc(12px * var(--canvas-inv-scale, 1)) / 1.2 Inter, system-ui, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Controle de zoom (fica na faixa clara embaixo da cena). */
+.hub-zoom {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid #d7e6f1;
+  border-radius: 999px;
+  background: #fff;
+  color: #123750;
+}
+
+.hub-zoom__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.hub-zoom__icon {
+  width: 36px;
+  padding: 0;
+}
+
+.hub-zoom__btn:hover:not(:disabled) {
+  background: #eef6fb;
+}
+
+.hub-zoom__btn:focus-visible,
+.hub-zoom__slider:focus-visible {
+  outline: 2px solid #2e7ce1;
+  outline-offset: 2px;
+}
+
+.hub-zoom__btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hub-zoom__value {
+  min-width: 84px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hub-zoom__guides[aria-pressed='true'] {
+  background: #e0f7f8;
+  color: #04646a;
+}
+
+.hub-zoom__slider {
+  --fill: 50%;
+  width: 120px;
+  height: 36px;
+  margin: 0 4px;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.hub-zoom__slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, #02c2cd var(--fill), #d7e6f1 var(--fill));
+}
+
+.hub-zoom__slider::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: #d7e6f1;
+}
+
+.hub-zoom__slider::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: #02c2cd;
+}
+
+.hub-zoom__slider::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #083d65;
+  box-shadow: 0 1px 3px #0c294659;
+  -webkit-appearance: none;
+}
+
+.hub-zoom__slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #083d65;
+  box-shadow: 0 1px 3px #0c294659;
+}
+
+@media (max-width: 767px) {
+  .hub-zoom__btn {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .hub-zoom__icon {
+    width: 44px;
+  }
+
+  .hub-zoom__slider {
+    width: 88px;
+    height: 44px;
+  }
+
+  .hub-zoom__guides span {
+    display: none;
+  }
+
+  .hub-canvas-stage__viewport.is-zoomed .hub-canvas-stage__scroller {
+    padding: 12px;
+  }
+}
+
+/* Em 360/390 px o slider sai; ficam os botões e o menu de percentual. */
+@media (max-width: 480px) {
+  .hub-zoom__slider {
+    display: none;
+  }
+
+  .hub-zoom__value {
+    min-width: 72px;
+  }
+}

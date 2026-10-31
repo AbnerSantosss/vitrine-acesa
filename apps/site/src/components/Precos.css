@@ -1,315 +1,118 @@
-/* Grade de preços. Três cards iguais em altura, com o do meio destacado por
-   borda (não por escala): card maior que os vizinhos desalinha o preço e o
-   botão, e é justamente a linha do preço que precisa ser comparável de relance. */
+.precos.secao { min-height:calc(100svh - 74px); padding-block:28px; gap:20px; display:flex; flex-direction:column; justify-content:center; }
+.precos__cabeca { text-align:center; }
+.precos__cabeca .h2 { font-size:clamp(27px,2.65vw,38px); line-height:1.12; margin:9px auto; max-width:28ch; }
+.precos__cabeca .h2 span { color:var(--marca); }
+.precos__cabeca > p { font-size:14px; color:var(--tinta-3); }
+.precos__intervalo { display:inline-flex; gap:4px; padding:4px; margin-top:16px; background:#dceaf5; border:1px solid #c6dbe9; border-radius:12px; }
+.precos__intervalo button { border:0; background:transparent; color:#315a74; cursor:pointer; min-height:44px; padding:8px 18px; font-size:13px; font-weight:650; border-radius:8px; }
+.precos__intervalo small { display:block; font-size:10px; font-weight:500; margin-top:3px; }
+.precos__intervalo [aria-pressed="true"] { background:#0369a1; color:white; box-shadow:0 3px 7px #07578028; }
+.precos__grade { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+.precos__card.card { border:1px solid #cbdde9; padding:24px; border-radius:16px; display:flex; flex-direction:column; background:#fff; min-width:0; box-shadow:0 8px 24px #224f7410; }
+.precos__card--destaque.card { border:2px solid #0369a1; padding:23px; background:linear-gradient(160deg,#fff 65%,#edf8ff); box-shadow:0 12px 30px #0369a11a; }
+.precos__topo { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.precos__topo h3 { font-size:21px; letter-spacing:-.03em; }
+.precos__selo { color:#12618a; background:#e8f4fc; border-radius:6px; padding:5px 8px; font-size:10px; font-weight:650; white-space:nowrap; }
+.precos__card--destaque .precos__selo { background:#0369a1; color:white; }
+.precos__descricao { color:#617487; font-size:12px; margin:5px 0 17px; }
+.precos__ancora { font-size:11px; color:#5d7488; min-height:16px; }
+.precos__ancora span { font-weight:650; }
+.precos__valor { font-size:43px; font-weight:750; line-height:1.2; letter-spacing:-.045em; margin:3px 0; color:#0b2238; }
+.precos__valor > span { font-size:12px; font-weight:450; letter-spacing:0; color:#4e677b; margin-left:5px; }
+.precos__cobranca { font-size:11px; color:#3f5c72; min-height:16px; }
+.precos__economia { display:flex; align-items:center; gap:5px; color:#0369a1; font-size:11px; font-weight:600; padding:10px 0 12px; border-bottom:1px solid #dce8ef; }
+.precos__economia svg { width:14px; flex:none; }
+.precos__inclui { display:grid; align-content:start; gap:9px; list-style:none; padding:16px 0 20px; flex:1; }
+.precos__inclui li { display:flex; gap:8px; align-items:flex-start; font-size:12px; line-height:1.4; color:#34536c; }
+.precos__inclui svg { color:#0369a1; flex:none; }
+.precos__card .btn { font-size:13px; min-height:44px; padding:10px 14px; justify-content:space-between; }
+.precos__rodape-card { color:#617487; font-size:10px; line-height:1.45; margin-top:10px; }
+.precos__aviso { font-size:11px; color:#526c82; text-align:center; }
+.precos__aviso a { color:#0369a1; font-weight:650; margin-left:8px; text-underline-offset:3px; }
+.precos__seletor { display:none; }
+.precos-planejar.secao { padding-block:42px; gap:24px; background:#e5eff7; }
+.precos__simulador.card { display:grid; grid-template-columns:1fr 1.4fr auto; gap:28px; align-items:center; padding:28px; background:#fff; border:1px solid #cbdde9; border-radius:14px; }
+.precos__simulador-campo h2 { font-size:23px; margin-bottom:12px; }
+.precos__simulador-campo label { display:block; font-size:13px; margin-bottom:9px; }
+.precos__simulador-campo input { max-width:120px; }
+.precos__simulador-total { font-size:32px; font-weight:700; margin:8px 0; }
+.precos__simulador-total span { font-size:13px; font-weight:450; margin-left:6px; color:#456078; }
+.precos__simulador-conta .micro + .micro { margin-top:8px; }
+.precos__secundarios { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+.precos__secundarios article { display:flex; align-items:center; gap:24px; padding:22px 0; border-top:1px solid #c4d8e6; }
+.precos__secundarios h3 { font-size:16px; margin-bottom:7px; }
+.precos__secundarios p { font-size:12px; line-height:1.55; color:#4b687e; }
+.precos__secundarios .btn { flex:none; font-size:12px; }
+@media(min-width:761px) and (min-height:700px) { .precos.secao { height:calc(100svh - 74px); min-height:670px; } }
+@media(max-width:1000px) { .precos__card.card { padding:18px; }.precos__card--destaque.card { padding:17px; }.precos__selo { font-size:9px; }.precos__simulador.card { grid-template-columns:1fr 1.4fr; }.precos__simulador > .btn { grid-column:2; justify-self:start; }.precos__secundarios article { flex-direction:column; align-items:flex-start; } }
+@media(max-width:760px) {
+ .precos.secao { padding-block:22px; gap:14px; min-height:calc(100svh - 64px); }
+ .precos__cabeca .blocos__eyebrow { font-size:9px; letter-spacing:.09em; }
+ .precos__cabeca .h2 { font-size:26px; margin-block:8px; }
+ .precos__cabeca > p { font-size:12px; line-height:1.5; max-width:31ch; margin:auto; }
+ .precos__intervalo { display:flex; margin-top:12px; }.precos__intervalo button { flex:1; padding:7px 10px; }
+ .precos__intervalo small { font-size:9px; }
+ .precos__seletor { display:flex; gap:6px; }.precos__seletor button { flex:1; border:1px solid #c6dce9; border-radius:8px; background:white; color:#385970; min-height:40px; cursor:pointer; font-size:13px; }
+ .precos__seletor [aria-pressed="true"] { border-color:#0369a1; background:#dceefa; color:#075a87; font-weight:700; }
+ .precos__grade { display:block; }.precos__card[data-active="false"] { display:none; }
+ .precos__card.card { padding:19px; }.precos__card--destaque.card { padding:18px; }
+ .precos__descricao { margin-bottom:12px; }.precos__valor { font-size:40px; }.precos__inclui { gap:8px; padding:13px 0 15px; }.precos__economia { padding:8px 0 10px; }
+ .precos__aviso { font-size:10px; line-height:1.5; }.precos__aviso a { display:block; }
+ .precos__simulador.card,.precos__secundarios { grid-template-columns:1fr; gap:18px; }.precos__simulador > .btn { grid-column:auto; }.precos__simulador.card { padding:22px; }
+}
+@media(max-width:760px) and (max-height:740px) { .precos.secao { gap:10px; padding-block:14px; }.precos__cabeca .h2 { font-size:23px; }.precos__cabeca > p { display:none; }.precos__card.card { padding:15px; }.precos__descricao { margin-bottom:7px; }.precos__inclui { gap:6px; padding:10px 0; }.precos__valor { font-size:35px; }.precos__economia { padding-block:7px; }.precos__rodape-card { margin-top:7px; } }
 
-.precos__cabeca {
-  max-width: 820px;
-  gap: 16px;
+/* Fit the offer, including its buttons, inside the available desktop fold. */
+.precos__cabeca,.precos__aviso,.precos__seletor { flex:none; }
+.precos__inclui { margin:0; gap:7px; padding:12px 0 14px; }
+.precos__card.card { padding:18px; }.precos__card--destaque.card { padding:17px; }
+.precos__descricao { margin:3px 0 10px; }.precos__economia { padding:7px 0 9px; }
+@media(min-width:761px) {
+ .precos.secao { gap:16px; padding-block:20px; min-height:calc(100svh - var(--nav-h)); height:auto; }
+ .precos__cabeca .h2 { font-size:clamp(27px,2.5vw,34px); margin-block:7px; }
+ .precos__cabeca > p { font-size:12px; }.precos__intervalo { margin-top:10px; }
+}
+@media(min-width:761px) and (min-height:700px) {
+ .precos.secao { height:calc(100svh - var(--nav-h)); }
+ .precos__grade { flex:1; min-height:0; }
+}
+@media(max-width:760px) {
+ .precos.secao { min-height:calc(100svh - var(--nav-h)); }
+ .precos__inclui { margin:0; }
 }
 
-/* ── Mensal × anual ──────────────────────────────────────────────────────── */
 
-/* As abas NOMEIAM o compromisso ("Mensal — sem fidelidade", "Anual — 12 meses,
-   menor preço por tela"), então são rótulos longos: o grupo precisa poder
-   quebrar em vez de empurrar a seção de lado. `max-width: 100%` é o que impede
-   o estouro em telas intermediárias, onde `fit-content` sozinho passaria da
-   largura do contêiner. */
-.precos__intervalo {
-  position: relative;
-  isolation: isolate;
-  display: inline-flex;
-  flex-wrap: wrap;
-  padding: 4px;
-  border: 1.5px solid var(--borda-3);
-  border-radius: 99px;
-  background: var(--papel);
-  width: fit-content;
-  max-width: 100%;
+@media(min-width:1001px) {
+ .precos__cabeca { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr); gap:0 24px; text-align:left; align-items:center; }
+ .precos__cabeca > .blocos__eyebrow,.precos__cabeca > .h2,.precos__cabeca > p { grid-column:1; }
+ .precos__cabeca .h2 { margin:7px 0; max-width:none; font-size:30px; }
+ .precos__intervalo { grid-column:2; grid-row:1 / 4; justify-self:end; align-self:center; margin:0; }
+ .precos__intervalo button { padding-inline:14px; }
+}
+.precos__aviso { position:relative; }
+.comparacao__tabela .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+
+
+.precos__headline-mobile,.precos__ver-recursos { display:none; }
+.precos__cabeca .h2 > .precos__headline-desktop { color:#0b1526; }
+.precos__headline-desktop > span,.precos__headline-mobile > span { color:var(--marca); }
+@media(max-width:760px) {
+ .precos__headline-desktop { display:none; }.precos__headline-mobile { display:inline; color:#0b1526!important; }
+ .precos__cabeca > p { display:none; }.precos__cabeca .h2 { font-size:26px; margin-block:8px; }
+ .precos.secao { justify-content:center; }
+}
+@media(max-width:760px) and (max-height:740px) {
+ .precos__card.card { padding:15px; }
+ .precos__ver-recursos { display:flex; justify-content:space-between; align-items:center; width:100%; min-height:40px; color:#0369a1; font-size:12px; border:0; border-bottom:1px solid #d8e6f0; background:transparent; cursor:pointer; margin:2px 0 12px; text-align:left; }
+ .precos__inclui[data-expanded="false"] { display:none; }
+ .precos__cabeca .h2 { font-size:24px; }
+ .precos__rodape-card { font-size:10px; }
 }
 
-/* 44px: alvo mínimo de toque (era 40px). */
-.precos__aba {
-  position: relative;
-  z-index: 1;
-  border: none;
-  background: none;
-  padding: 8px 18px;
-  min-height: 44px;
-  border-radius: 99px;
-  font-weight: 600;
-  font-size: 0.9375rem;
-  color: var(--tinta-2);
-  cursor: pointer;
-  text-align: center;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-}
 
-.precos__aba:not(.precos__aba--ativa):hover {
-  background: var(--papel-2);
-  color: var(--tinta);
-}
-
-.precos__aba--ativa {
-  background: var(--marca);
-  color: var(--papel);
-  font-weight: 700;
-}
-
-/* A pílula que desliza (posição e tamanho escritos por Precos.jsx). Fica
-   invisível até a primeira medida; a partir daí ELA pinta o fundo da aba
-   ativa, e a aba fica transparente por cima. */
-.precos__indicador {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: 99px;
-  background: var(--marca);
-  /* Cobre o grupo todo; o recorte visível (a aba ativa) é escrito por
-     Precos.jsx em clip-path. Sem sombra: era um halo de 24px de blur sob uma
-     pílula de 44px. */
-  clip-path: inset(0 round 99px);
-  opacity: 0;
-  pointer-events: none;
-  transition: clip-path 0.35s var(--ease-saida);
-}
-
-.precos__intervalo--deslizante .precos__indicador {
-  opacity: 1;
-}
-
-.precos__intervalo--deslizante .precos__aba--ativa {
-  background: transparent;
-}
-
-/* ── Cards ───────────────────────────────────────────────────────────────── */
-
-.precos__grade {
-  align-items: stretch;
-}
-
-.precos__card {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 28px;
-}
-
-/* Destaque: a borda sólida de 2px em --marca é o sinal (contraste de 3:1
-   contra o papel, sem depender de efeito). Por cima dela, um anel de --marca
-   translúcida e uma sombra curta e neutra. Os DOIS cards com destaque (Grátis
-   e Loja) ganham o mesmo tratamento, de propósito. A borda de luz que seguia o
-   cursor (::after com radial-gradient) saiu: era o halo azul que o detector
-   marca, e o destaque já se lê sem ela. */
-.precos__card--destaque {
-  border: 2px solid var(--marca);
-  box-shadow: var(--sombra-destaque);
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.3s ease;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .precos__card--destaque:hover {
-    border-color: var(--marca);
-    box-shadow: var(--sombra-destaque-forte);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .precos__indicador {
-    transition: none;
-  }
-}
-
-.precos__topo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-
-.precos__nome {
-  font-size: 1.25rem;
-  font-weight: 800;
-  margin: 0;
-}
-
-.precos__valor {
-  font-size: 2.5rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.precos__unidade {
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: var(--tinta-3);
-  letter-spacing: 0;
-  line-height: 1.4;
-}
-
-.precos__inclui {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 0.9375rem;
-  color: var(--tinta-2);
-  /* Empurra botão e letra miúda para a base: com listas de tamanhos diferentes,
-     os três CTAs precisam ficar na mesma linha para serem comparáveis. */
-  flex: 1;
-}
-
-.precos__inclui li {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  line-height: 1.45;
-}
-
-.precos__marca {
-  flex: none;
-  margin-top: 3px;
-  color: var(--ok);
-}
-
-/* ── Simulador ───────────────────────────────────────────────────────────── */
-
-.precos__simulador {
-  display: grid;
-  grid-template-columns: 240px minmax(0, 1fr) auto;
-  gap: 24px;
-  align-items: center;
-  padding: 24px 28px;
-}
-
-.precos__simulador-campo {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.precos__simulador-rotulo {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--tinta-2);
-}
-
-.precos__simulador-input {
-  max-width: 140px;
-}
-
-.precos__simulador-conta {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.precos__simulador-total {
-  font-size: 1.75rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.precos__simulador-total span {
-  font-size: 0.9375rem;
-  font-weight: 500;
-  color: var(--tinta-3);
-  letter-spacing: 0;
-}
-
-/* ── Parceiro e Enterprise ───────────────────────────────────────────────── */
-
-.precos__secundario {
-  padding: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 24px;
-}
-
-.precos__secundario-nome {
-  font-size: 1.125rem;
-  font-weight: 800;
-  margin: 0 0 4px;
-}
-
-.precos__secundario-texto {
-  font-size: 0.9375rem;
-}
-
-.precos__secundario .btn {
-  flex: none;
-}
-
-.precos__promessa {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--tinta);
-  max-width: 54ch;
-}
-
-/* ── Larguras ────────────────────────────────────────────────────────────── */
-
-@media (max-width: 900px) {
-  .precos__grade {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .precos__simulador {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-  }
-
-  .precos__simulador .btn {
-    width: 100%;
-  }
-}
-
-@media (max-width: 640px) {
-  .precos__card {
-    padding: 22px 20px;
-  }
-
-  .precos__valor {
-    font-size: 2rem;
-  }
-
-  .precos__secundario {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .precos__secundario .btn {
-    width: 100%;
-  }
-
-  /* No celular as duas abas empilham. Lado a lado, os rótulos que nomeiam o
-     compromisso ficariam com duas ou três palavras por linha dentro de uma
-     pílula de 160px — ilegíveis justamente onde a pessoa escolhe entre pagar
-     por mês e assumir 12 meses. */
-  .precos__intervalo {
-    width: 100%;
-    flex-direction: column;
-    border-radius: var(--raio-12);
-  }
-
-  .precos__aba {
-    width: 100%;
-    padding: 8px 12px;
-    font-size: 0.9375rem;
-  }
+@media(max-width:760px) and (max-height:740px) {
+ .precos__cabeca > .blocos__eyebrow,.precos__descricao { display:none; }
+ .precos__card .precos__ancora { margin-top:8px; }
+ .precos__intervalo { margin-top:8px; }
+ .precos__aviso { font-size:9px; line-height:1.4; }
 }

@@ -77,3 +77,18 @@ export const leadRateLimit = rateLimit({
   legacyHeaders: false,
   message: { error: 'Muitos envios. Aguarde alguns minutos antes de tentar novamente.' },
 });
+
+/**
+ * IA de criação: cada chamada custa dinheiro na conta do provedor. Além do
+ * limite mensal por organização (configurado no admin), este teto curto evita
+ * rajada por clique repetido ou script. A chave é o usuário autenticado, não o
+ * IP: várias pessoas de uma rede saem pelo mesmo NAT.
+ */
+export const aiRateLimit = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: positiveIntFromEnv('AI_RATE_LIMIT', 20),
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request): string => `ai-user:${req.user?.id ?? 'anonimo'}`,
+  message: { error: 'Muitos pedidos de IA em pouco tempo. Aguarde alguns minutos.' },
+});

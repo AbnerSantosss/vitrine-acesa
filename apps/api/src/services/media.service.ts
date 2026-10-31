@@ -1,8 +1,10 @@
 import path from 'path';
 import fs from 'fs';
+import { getMediaStorage } from '../lib/media-storage';
 
 // Modo local: servir de disco. Modo R2: servir do Cloudflare R2 (S3-compatible).
-const USE_R2 = !!(process.env.R2_ENDPOINT && process.env.R2_ACCESS_KEY && process.env.R2_SECRET_KEY && process.env.R2_BUCKET);
+// A escolha vem de MEDIA_STORAGE (ver lib/media-storage.ts).
+const USE_R2 = getMediaStorage().mode === 'r2';
 
 const UPLOADS_DIR = path.resolve(__dirname, '../../uploads');
 
@@ -59,6 +61,15 @@ export interface MediaScope {
    * legados que estão na raiz do bucket/pasta (sem prefixo de organização).
    */
   isDefaultOrganization: boolean;
+}
+
+/** Tipos de imagem que a IA aceita editar. */
+function mimeFromName(name: string): string | null {
+  const ext = name.toLowerCase().split('.').pop();
+  if (ext === 'png') return 'image/png';
+  if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+  if (ext === 'webp') return 'image/webp';
+  return null;
 }
 
 export class MediaService {
@@ -138,6 +149,88 @@ export class MediaService {
     }));
 
     return { url: `${process.env.R2_PUBLIC_URL}/${key}`, key, filename };
+  }
+
+  /**
+   * Grava um arquivo gerado pelo próprio servidor (ex.: imagem criada pela IA)
+   * na biblioteca de mídia da organização, em R2 ou em disco, conforme o modo.
+   * Devolve a mesma forma do upload comum.
+   */
+  async saveBuffer(
+    file: { buffer: Buffer; originalname: string; mimetype: string },
+    organizationId: string
+  ): Promise<{ url: string; key: string; filename: string }> {
+    if (!isSafeOrganizationId(organizationId)) {
+      throw new Error('organizationId inválido para prefixo de upload.');
+    }
+    if (USE_R2) return this.uploadToR2(file, organizationId);
+
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '');
+    const filename = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${safeName}`;
+    const dir = this.getUploadsDirFor(organizationId);
+    await fs.promises.writeFile(path.join(dir, filename), file.buffer);
+    const key = `${organizationId}/${filename}`;
+    return { url: `/uploads/${key}`, key, filename };
+  }
+
+  /**
+   * Lê um arquivo da biblioteca DA PRÓPRIA organização a partir da URL que o
+   * editor guarda no widget. Não faz requisição de rede para a URL recebida: só
+   * aceita o formato das URLs que este servidor gera (`/uploads/<org>/<arquivo>`
+   * ou `<R2_PUBLIC_URL>/<org>/<arquivo>`) e lê direto do disco ou do bucket.
+   * Isso fecha SSRF e impede ler mídia de outro tenant. `null` = não é nossa.
+   */
+  async readOwnMedia(
+    rawUrl: string,
+    organizationId: string,
+    maxBytes = 20 * 1024 * 1024
+  ): Promise<{ buffer: Buffer; mimetype: string; filename: string } | null> {
+    if (!isSafeOrganizationId(organizationId) || typeof rawUrl !== 'string') return null;
+    const value = rawUrl.trim();
+    let filename: string | null = null;
+
+    if (USE_R2) {
+      const base = (process.env.R2_PUBLIC_URL || '').replace(/\/+$/, '');
+      const prefix = `${base}/${organizationId}/`;
+      if (base && value.startsWith(prefix)) filename = value.slice(prefix.length).split(/[?#]/)[0];
+    } else {
+      let pathname: string;
+      try {
+        pathname = new URL(value, 'http://local.invalid').pathname;
+      } catch {
+        return null;
+      }
+      const prefix = `/uploads/${organizationId}/`;
+      if (pathname.startsWith(prefix)) filename = decodeURIComponent(pathname.slice(prefix.length));
+    }
+
+    if (!filename || !isSafeBaseName(filename)) return null;
+    const mimetype = mimeFromName(filename);
+    if (!mimetype) return null;
+
+    if (USE_R2) {
+      const { GetObjectCommand } = await import('@aws-sdk/client-s3');
+      const client = await getS3Client();
+      try {
+        const out = await client.send(
+          new GetObjectCommand({ Bucket: process.env.R2_BUCKET!, Key: `${organizationId}/${filename}` })
+        );
+        const bytes: Uint8Array = await out.Body.transformToByteArray();
+        if (bytes.byteLength > maxBytes) return null;
+        return { buffer: Buffer.from(bytes), mimetype, filename };
+      } catch {
+        return null;
+      }
+    }
+
+    const filePath = path.join(this.getUploadsDirFor(organizationId), filename);
+    try {
+      const stat = await fs.promises.stat(filePath);
+      if (!stat.isFile() || stat.size > maxBytes) return null;
+      return { buffer: await fs.promises.readFile(filePath), mimetype, filename };
+    } catch {
+      return null;
+    }
   }
 
   // --- List ---

@@ -278,6 +278,8 @@ export const saveDisplay = async (display: Display): Promise<void> => {
     pages: display.pages,
     coverImage: display.coverImage && display.coverImage.trim() !== '' ? display.coverImage : null,
     orientation: display.orientation || 'horizontal',
+    // undefined = o servidor mantém o mural atual; null = tela comum.
+    wall: display.wall === undefined ? undefined : (display.wall ?? null),
   });
 };
 

@@ -2,6 +2,7 @@ import { Router } from 'express';
 
 import { authMiddleware, masterMiddleware } from '../../middlewares/auth.middleware';
 
+import aiRoutes from './ai.routes';
 import auditRoutes from './audit.routes';
 import { adminDevicesRouter, adminOrgDevicesRouter } from './devices.routes';
 import emailRoutes from './email.routes';
@@ -50,5 +51,6 @@ router.use('/payments', paymentsRoutes);
 router.use('/leads', leadsRoutes);
 router.use('/email', emailRoutes);
 router.use('/metrics', metricsRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;

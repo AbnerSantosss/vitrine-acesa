@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot, hydrateRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+import './identity.css'
 
 const rootEl = document.getElementById('root')
 const app = (

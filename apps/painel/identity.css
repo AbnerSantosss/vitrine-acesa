@@ -1,0 +1,47 @@
+@import "../../packages/marca/visual-assets.css";
+/* Backgrounds and icon art only. Scene content and original blue tokens stay intact. */
+.auth-page .auth-vitrine {
+  --auth-tinta: var(--noite-titulo);
+  --auth-tinta-2: var(--noite-texto);
+  --auth-marca: var(--luz);
+  --auth-ok: var(--luz);
+  --auth-linha: var(--noite-borda-2);
+  --auth-papel: var(--noite-2);
+  background-image: linear-gradient(110deg, rgba(7,20,38,.97), rgba(7,20,38,.68)), var(--hub-art);
+  background-size: cover; background-position: 68% center;
+}
+.auth-page .auth-coluna {
+  background-image: linear-gradient(rgba(255,255,255,.96), rgba(255,255,255,.9)), var(--hub-art);
+  background-size: cover; background-position: right bottom;
+}
+.auth-page .auth-lugares li { background: rgba(12,30,54,.7); }
+.th-grid-bg::before {
+  background-image: linear-gradient(rgba(244,247,251,.94), rgba(244,247,251,.99)), var(--hub-art);
+  background-size: cover; background-position: right top;
+}
+.hub-topbar { background-image: linear-gradient(100deg, var(--papel) 40%, var(--marca-fundo)); }
+.hub-topbar svg, .hub-modules svg { stroke-width: 1.75; }
+.display-preview {
+  background-image: linear-gradient(100deg, rgba(244,247,251,.78), rgba(244,247,251,.35)), var(--hub-art);
+  background-size: cover; background-position: center;
+}
+.hub-toolbar { background-image: linear-gradient(100deg, var(--papel) 55%, var(--marca-fundo)); }
+.hub-canvas {
+  background-color: var(--papel-3);
+  background-image: radial-gradient(circle, rgba(var(--marca-rgb),.16) 1px, transparent 1px), linear-gradient(135deg, var(--papel-2), var(--marca-fundo));
+  background-size: 20px 20px, 100% 100%;
+}
+.hub-canvas > div:first-child { opacity: 0; }
+.hub-canvas-frame { box-shadow: 0 16px 40px -16px rgba(7,20,38,.4); }
+.hub-widget-tool { background: var(--papel); }
+.hub-widget-icon { background: var(--marca-fundo); border-radius: 8px; }
+.hub-widget-icon svg { color: var(--marca); stroke-width: 1.7; fill: rgba(var(--marca-rgb),.07); }
+.hub-widget-tool:disabled .hub-widget-icon svg { color: var(--tinta-3); fill: none; }
+.hub-widget-tool:hover:not(:disabled) .hub-widget-icon { background: var(--marca-borda); }
+
+.tv-frame { position: relative; overflow: hidden; }
+.hub-example-label { position: absolute; bottom: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; background: rgba(7,20,38,.88); color: white; font-size: 9px; line-height: 1.4; }
+.hub-canvas-example { position: absolute; inset: 0; z-index: 25; }
+.hub-canvas-example > img { width: 100%; height: 100%; object-fit: cover; }
+.hub-canvas-example__caption { position: absolute; inset: auto 0 0; padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; color: var(--noite-titulo); background: rgba(7,20,38,.94); font-size: 12px; }
+.hub-canvas-example__caption button { cursor: pointer; border: 1px solid var(--luz); border-radius: 6px; padding: 8px 12px; min-height: 40px; color: var(--noite); background: var(--luz); font-weight: 600; }

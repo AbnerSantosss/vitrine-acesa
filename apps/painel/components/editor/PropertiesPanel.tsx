@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { SizeInput } from '../SizeInput';
 import { Display, Page, WidgetType, LayoutItem } from '../../types';
+import { ImageStyleFields, TextStyleFields, IconStyleFields, ShapeStyleFields, MotionStyleFields } from './panels/StyleFields';
+import './QuickToolbar.css';
 
 interface PropertiesPanelProps {
   selectedWidget: string | null;
@@ -90,24 +92,24 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   activeMealDay,
   setActiveMealDay
 }) => {
-  // When no widget is selected, don't render the panel at all so the canvas stays centered
-  if (!currentWidget) {
+  // Advanced controls open explicitly; selecting an element keeps the compact toolbar in place.
+  if (!currentWidget || !showRightSidebar) {
     return null;
   }
 
   return (
-    <aside className={`absolute md:relative right-0 top-0 h-full w-80 bg-papel border-l border-borda p-6 overflow-y-auto z-[60] shadow-flutuante transition-transform duration-300 ease-in-out ${showRightSidebar ? 'translate-x-0' : 'translate-x-full md:translate-x-0'}`}>
+    <aside id="widget-advanced-options" className="hub-properties-dock" aria-label="Todas as opções do elemento">
       {currentWidget ? (
         <div className="space-y-6 animate-in slide-in-from-right-4 duration-200">
-          <div className="flex items-center justify-between border-b border-borda pb-4">
+          <div className="hub-properties-heading">
             <h3 className="font-bold text-tinta flex items-center gap-2 text-xs uppercase tracking-wider">
-               <Settings size={14} className="text-marca" /> Configuração
+               <Settings size={16} className="text-marca" /> Todas as opções
             </h3>
             <div className="flex items-center gap-2">
-              <button onClick={() => removeWidget(selectedWidget!)} className="text-danger hover:bg-danger-fundo p-2 rounded-lg transition-colors" title="Remover Widget">
+              <button type="button" onClick={() => removeWidget(currentWidget.i)} className="text-danger hover:bg-danger-fundo p-2 rounded-lg transition-colors" title="Excluir elemento" aria-label="Excluir elemento">
                 <Trash2 size={16} />
               </button>
-              <button onClick={() => setShowRightSidebar(false)} className="md:hidden text-tinta-3 hover:text-tinta p-2 rounded-lg hover:bg-papel-3 transition-colors" title="Fechar">
+              <button type="button" onClick={() => setShowRightSidebar(false)} className="text-tinta-3 hover:text-tinta p-2 rounded-lg hover:bg-papel-3 transition-colors" title="Fechar opções" aria-label="Fechar opções">
                 <X size={16} />
               </button>
             </div>
@@ -118,7 +120,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
               <div className="bg-marca-fundo p-4 rounded-xl border border-marca space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-center gap-2">
                   <Maximize2 size={12} className="text-marca" />
-                  <span className="text-[10px] font-black text-marca uppercase tracking-wider">Modo Tela Cheia Ativo</span>
+                  <span className="text-[10px] font-black text-marca uppercase tracking-wider">{currentWidget.data.fullScreenMode ? 'Ocupa toda a TV' : 'Fundo e preenchimento'}</span>
                 </div>
 
                 <button
@@ -129,11 +131,11 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   <span className="relative z-10">Preencher Tela Inteira</span>
                 </button>
                 <p className="text-[8px] text-warn text-center leading-tight">
-                  ⚠️ Atenção: Isso removerá todos os outros widgets desta cena e deixará o widget ocupando 100% da tela como fundo.
+                  Ao preencher a TV, este elemento substitui os outros desta cena.
                 </p>
                 
                 <div className="pt-2 border-t border-borda space-y-2">
-                  <label className="text-[9px] font-black text-tinta-3 uppercase block">Selecione o Background</label>
+                  <label className="text-[9px] font-black text-tinta-3 uppercase block">Imagem ou vídeo de fundo</label>
                   <input
                     type="text"
                     value={currentWidget.data.backgroundImage || ''}
@@ -1205,6 +1207,9 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                 </div>
               </div>
             )}
+            {currentWidget.type === WidgetType.IMAGE && (
+              <ImageStyleFields widget={currentWidget} updateWidgetData={updateWidgetData} />
+            )}
             {currentWidget.type === WidgetType.GIF && (
               <div className="space-y-3">
                 <button 
@@ -1269,6 +1274,7 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   </div>
                 </div>
 
+                <div className="mt-2"><TextStyleFields widget={currentWidget} updateWidgetData={updateWidgetData} /></div>
                 <div className="space-y-3 mt-2">
                   <div>
                     <label className="text-[9px] font-black text-tinta-3 uppercase mb-1 block">Alinhamento Texto</label>
@@ -1314,6 +1320,15 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   </div>
                 </div>
               </>
+            )}
+            {currentWidget.type === WidgetType.ICON && (
+              <IconStyleFields widget={currentWidget} updateWidgetData={updateWidgetData} />
+            )}
+            {currentWidget.type === WidgetType.SHAPE && (
+              <ShapeStyleFields widget={currentWidget} updateWidgetData={updateWidgetData} />
+            )}
+            {currentWidget.type === WidgetType.MOTION && (
+              <MotionStyleFields widget={currentWidget} updateWidgetData={updateWidgetData} setMediaLibraryConfig={setMediaLibraryConfig} />
             )}
             {currentWidget.type === WidgetType.NOTES && (
               <div className="space-y-3">

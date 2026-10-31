@@ -724,9 +724,7 @@ const ConecteSuaTV: React.FC<ConecteSuaTVProps> = ({
           <div>
             <h1 className="ctv-titulo">Conecte sua TV</h1>
             <p className="ctv-subtitulo">
-              São dois passos: abrir um endereço na TV e digitar aqui o código que aparecer nela.
-              Funciona com qualquer TV que já esteja na parede da sua loja, padaria, mercado ou
-              farmácia.
+              Na TV, abra o endereço. Aqui, digite o código. Pronto.
             </p>
           </div>
           {variante === 'pagina' ? (
@@ -749,11 +747,10 @@ const ConecteSuaTV: React.FC<ConecteSuaTVProps> = ({
             <span className="ctv-passo-num" aria-hidden="true">
               1
             </span>
-            <h2 className="ctv-passo-titulo">Abra este endereço na TV</h2>
+            <h2 className="ctv-passo-titulo">Abra na sua TV</h2>
           </div>
           <p className="ctv-passo-apoio">
-            Use o navegador da TV, do Fire Stick ou do aparelho ligado nela. Digite exatamente como
-            está escrito.
+            No navegador da TV, digite o endereço abaixo.
           </p>
 
           <div className="ctv-endereco-linha">
@@ -776,13 +773,10 @@ const ConecteSuaTV: React.FC<ConecteSuaTVProps> = ({
               </div>
             </div>
 
-            <div className="ctv-qr-caixa">
-              <QrCode valor={enderecoPlayer} />
-              <p className="ctv-qr-legenda">
-                Aponte a câmera do celular para abrir o mesmo endereço sem digitar.
-              </p>
-            </div>
+
+            <div className="ctv-qr-caixa"><QrCode valor={enderecoPlayer} lado={140} /><p className="ctv-qr-legenda">Leia para testar no celular.<br/>Na TV, digite o endereço.</p></div>
           </div>
+          <div className="ctv-tv-hint"><Tv size={30} aria-hidden="true" /><div><strong>A TV vai mostrar um código.</strong><p>Deixe essa página aberta na TV e siga para o passo 2.</p></div></div>
         </section>
 
         {/* Passo 2 — o código de 6 caracteres. */}
@@ -791,11 +785,10 @@ const ConecteSuaTV: React.FC<ConecteSuaTVProps> = ({
             <span className="ctv-passo-num" aria-hidden="true">
               2
             </span>
-            <h2 className="ctv-passo-titulo">Digite o código que apareceu na TV</h2>
+            <h2 className="ctv-passo-titulo">Conecte por aqui</h2>
           </div>
           <p className="ctv-passo-apoio">
-            Assim que o endereço abre, a TV mostra um código de 6 caracteres. Ele é dessa TV e
-            dessa vez.
+            Digite os 6 caracteres que aparecerem na TV.
           </p>
 
           <form className="ctv-form" onSubmit={conectar}>
@@ -821,7 +814,7 @@ const ConecteSuaTV: React.FC<ConecteSuaTVProps> = ({
             <div className="ctv-grid-2">
               <div className="ctv-campo">
                 <label className="ctv-rotulo" htmlFor="ctv-nome">
-                  Nome desta TV
+                  Nome da TV
                 </label>
                 <input
                   id="ctv-nome"
@@ -831,7 +824,7 @@ const ConecteSuaTV: React.FC<ConecteSuaTVProps> = ({
                   placeholder="Recepção, Portaria, Vitrine…"
                 />
                 <span className="ctv-ajuda">
-                  Serve para você reconhecer a TV depois, quando houver mais de uma.
+                  Opcional. Ex.: vitrine ou recepção.
                 </span>
               </div>
 
@@ -839,7 +832,7 @@ const ConecteSuaTV: React.FC<ConecteSuaTVProps> = ({
                 {displays.length > 0 ? (
                   <>
                     <label className="ctv-rotulo" htmlFor="ctv-tela">
-                      Conteúdo que vai aparecer
+                      O que exibir
                     </label>
                     <select
                       id="ctv-tela"
@@ -856,7 +849,7 @@ const ConecteSuaTV: React.FC<ConecteSuaTVProps> = ({
                   </>
                 ) : (
                   <>
-                    <span className="ctv-rotulo">Conteúdo que vai aparecer</span>
+                    <span className="ctv-rotulo">O que exibir</span>
                     <span className="ctv-ajuda">
                       {carregando
                         ? 'Carregando…'
@@ -879,7 +872,7 @@ const ConecteSuaTV: React.FC<ConecteSuaTVProps> = ({
                 <span>
                   {tvsConectadas.length > 0
                     ? `Aguardando a TV conectar. Esta conta já tem ${tvsConectadas.length} ${tvsConectadas.length === 1 ? 'TV conectada' : 'TVs conectadas'}.`
-                    : 'Aguardando a TV conectar. Deixe o endereço aberto na TV enquanto digita o código.'}
+                    : 'Mantenha o código aberto na TV até conectar.'}
                 </span>
               </p>
             )}
@@ -898,10 +891,8 @@ const ConecteSuaTV: React.FC<ConecteSuaTVProps> = ({
         </section>
 
         {/* Guia por aparelho. */}
-        <section className="ctv-cartao ctv-guia-cartao">
-          <div className="ctv-passo">
-            <h2 className="ctv-passo-titulo">Onde abrir, por tipo de aparelho</h2>
-          </div>
+        <details className="ctv-cartao ctv-guia-cartao">
+          <summary>Precisa de ajuda para abrir o navegador da TV?</summary>
           <div className="ctv-guia">
             {GUIA_APARELHOS.map((aparelho) => (
               <article className="ctv-guia-item" key={aparelho.nome}>
@@ -918,7 +909,7 @@ const ConecteSuaTV: React.FC<ConecteSuaTVProps> = ({
             A TV precisa ficar ligada e com internet. Se ela desligar, o conteúdo volta sozinho
             quando ela ligar de novo. Não precisa conectar outra vez.
           </p>
-        </section>
+        </details>
       </div>
     </div>
   );

@@ -1,82 +1,24 @@
-/* RODAPÉ — estilo próprio. Só tokens do sistema (index.css). */
-
-.rodape {
-  /* .secao dá o recuo lateral fluido, que precisa ser o mesmo do resto da
-     página; o vertical encolhe porque o rodapé é uma linha, não uma seção. */
-  padding-block: clamp(24px, 3vw, 40px);
-  border-top: 1px solid var(--borda);
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  font-size: 13px;
-  color: var(--tinta-3);
-}
-
-/* Identificação do fornecedor: três linhas curtas empilhadas em vez de uma só
-   comprida. Em 390px, CNPJ + razão social + endereço + canal do titular numa
-   linha corrida viram um parágrafo cinza que ninguém lê — e a exigência do art.
-   6º do CDC é de informação ostensiva, não de informação presente. */
-.rodape__identidade {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-width: 62ch;
-}
-
-.rodape__linha {
-  margin: 0;
-  /* `ch` vale pelo corpo de quem o declara: em `.rodape__identidade` (16px) os
-     62ch davam linhas de 13px com mais de 80 caracteres. */
-  max-width: 54ch;
-  line-height: 1.5;
-}
-
-/* Linhas com marcador entre colchetes ([RAZÃO SOCIAL], [ENDEREÇO], [E-MAIL DO
-   ENCARREGADO]). Ficam visíveis de propósito até o dono preencher: marcador que
-   se esconde é marcador que ninguém completa. */
-.rodape__marcador {
-  color: var(--tinta-3);
-}
-
-.rodape__links {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 20px;
-}
-
-/* `.rodape__pendente` (o rótulo "em preparação" de Privacidade e Termos) saiu
-   junto com o motivo dele: as páginas existem, os dois viraram <a href>. Se um
-   dia as rotas caírem, o rótulo honesto volta — não o href="#".
-
-   A mesma classe serve para <a> e para <button>: os dois são links aos olhos de
-   quem lê, e a diferença (navegar × rolar) é de comportamento, não de aparência.
-   O alvo de toque tem 44px de altura nos dois casos. */
-/* Base, hover e alvo de 44px vêm de .btn--texto (index.css); o foco é o
-   global de 3px. Aqui só o tom discreto de rodapé: cinza que vira --marca no
-   hover, peso normal e o corpo de 13px da faixa. Sem <span class="btn__rotulo">
-   o sublinhado animado não aparece — por isso o hover sublinha pelo jeito
-   clássico. */
-.rodape__link {
-  padding: 0;
-  font-size: inherit;
-  font-weight: 400;
-  color: var(--tinta-3);
-}
-
-.rodape__link:hover {
-  color: var(--marca);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-@media (max-width: 720px) {
-  .rodape {
-    justify-content: flex-start;
-  }
-}
+.rodape.secao { background:#071d30; color:#b9d0e0; border-top:1px solid #31516b; padding-block:54px 28px; gap:36px; }
+.rodape__grade { display:grid; grid-template-columns:1.45fr 1fr 1fr 1.25fr; gap:34px; }
+.rodape__marca > a { display:flex; align-items:center; gap:10px; color:#fff; text-decoration:none; font-size:24px; letter-spacing:-.04em; }
+.rodape__marca .brand-symbol { width:37px; height:37px; }
+.rodape__marca p { font-size:13px; line-height:1.7; margin:20px 0 14px; color:#c0d5e5; }
+.rodape__origem { font-size:10px; color:#7dcff5; }
+.rodape h2 { font-size:12px; font-weight:650; color:#f1f8ff; margin-bottom:15px; }
+.rodape__grade nav { display:flex; flex-direction:column; align-items:flex-start; gap:2px; }
+.rodape__grade nav button,.rodape__grade nav a { background:none; border:0; color:#b9d0e0; cursor:pointer; text-align:left; padding:10px 0; min-height:38px; font-size:12px; line-height:1.4; text-decoration:none; }
+.rodape__grade nav button:hover,.rodape__grade nav a:hover { color:#81d9ff; text-decoration:underline; text-underline-offset:4px; }
+.rodape__confianca { border-top:1px solid #294359; border-bottom:1px solid #294359; padding:26px 0; display:grid; grid-template-columns:1.25fr 1fr 1.25fr; gap:30px; }
+.rodape__confianca h2 { font-size:10px; color:#8daec5; }
+.rodape__selos { display:flex; gap:20px; }
+.rodape__selo { display:flex; align-items:center; gap:8px; }
+.rodape__selo svg { width:32px; height:32px; flex:none; color:#79c7ed; }
+.rodape__selo strong { display:block; font-size:10px; color:#e1eef8; }
+.rodape__selo small { display:block; font-size:9px; line-height:1.5; color:#a9c0d1; margin-top:3px; }
+.rodape__pagamentos > div { display:flex; gap:6px; }
+.rodape__pagamentos > div > span { padding:7px 9px; border:1px solid #3f5b70; border-radius:5px; background:#102d42; font-size:11px; color:#e5eff6; white-space:nowrap; }
+.rodape__pagamentos > small { display:block; color:#9db8cb; font-size:9px; line-height:1.5; margin-top:9px; max-width:36ch; }
+.rodape__legal { display:flex; justify-content:space-between; gap:25px; font-size:10px; line-height:1.7; color:#90abc0; }
+.rodape__legal strong { color:#c7dae8; font-weight:550; }.rodape__legal > span { text-align:right; }
+@media(max-width:980px) { .rodape__grade { grid-template-columns:1fr 1fr; }.rodape__confianca { grid-template-columns:1fr 1fr; }.rodape__confianca > :last-child { grid-column:1/-1; } }
+@media(max-width:540px) { .rodape.secao { padding-block:36px 25px; gap:28px; }.rodape__grade { gap:25px 20px; }.rodape__marca { grid-column:1/-1; }.rodape__grade nav:last-child { grid-column:1/-1; }.rodape__confianca { grid-template-columns:1fr; gap:26px; }.rodape__legal { flex-direction:column; gap:15px; }.rodape__legal > span { text-align:left; }.rodape__selo strong { font-size:11px; }.rodape__selo small,.rodape__pagamentos > small { font-size:10px; } }

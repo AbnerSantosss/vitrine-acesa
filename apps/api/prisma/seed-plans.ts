@@ -95,9 +95,21 @@ const FEATURES_REDE = [
   // (`relatorios`) continua no Loja — são coisas diferentes.
   'auditoria',
   'powerbi',
+  // Criação com IA (gerar e editar imagem, montar tela pronta por texto). Cada
+  // uso custa dinheiro na conta do provedor da plataforma, por isso fica no
+  // degrau de rede e ainda tem limite mensal por organização no admin.
+  'ia-criacao',
 ];
 
-const FEATURES_ENTERPRISE = [...FEATURES_REDE, 'white-label', 'sso', 'sla', FEATURE_QUOTE_ONLY];
+// `videowall`: uma cena espalhada por um mural de várias TVs (até 6x6).
+const FEATURES_ENTERPRISE = [
+  ...FEATURES_REDE,
+  'white-label',
+  'sso',
+  'sla',
+  'videowall',
+  FEATURE_QUOTE_ONLY,
+];
 
 export const PLAN_CATALOG: PlanSeed[] = [
   {

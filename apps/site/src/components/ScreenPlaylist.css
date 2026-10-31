@@ -1,0 +1,64 @@
+.demo-tv { width:100%; min-width:0; position:relative; }
+.demo-tv__body { position:relative; padding:5px 5px 0; border:1px solid #68717a; border-radius:6px; background:linear-gradient(130deg,#6b737c 0,#252c34 1%,#0c1017 30%,#1c232c 95%,#5d6670); box-shadow:inset 0 0 0 1px #03060b,1px 2px 0 #0b121b,0 15px 23px -12px #08172695; }
+.demo-tv__body::after { content:''; position:absolute; inset:1px; border-radius:4px; pointer-events:none; border-top:1px solid #dce6f047; border-left:1px solid #dce6f01a; }
+.demo-tv__viewport { position:relative; width:100%; aspect-ratio:16/9; overflow:hidden; background:#081321; container-type:inline-size; border:1px solid #05080e; box-shadow:0 0 0 1px #67748038; }
+.demo-tv--portrait .demo-tv__viewport { aspect-ratio:9/16; }
+.demo-tv__slide { position:absolute; inset:0; opacity:0; transition:opacity .5s var(--ease-saida,ease-out); }
+.demo-tv__slide.is-active { opacity:1; }
+.demo-tv__slide img { width:100%; height:100%; display:block; object-fit:cover; }
+.demo-tv__bezel { position:relative; height:13px; display:flex; align-items:center; justify-content:center; border-top:1px solid #ffffff08; }
+.demo-tv__wordmark,.blocos__tv-wordmark { font-size:4px; letter-spacing:.23em; color:#a6afb9; font-weight:600; }
+.demo-tv__sensor { position:absolute; right:7%; width:2px; height:2px; border-radius:50%; background:#c8dfe5; box-shadow:0 0 3px #c8e5f070; }
+.demo-tv__stand { position:relative; height:17px; width:76%; margin:-1px auto 3px; filter:drop-shadow(0 3px 2px #03132140); }
+.demo-tv__stand::before,.demo-tv__stand::after { content:''; position:absolute; top:0; width:19%; height:100%; background:linear-gradient(100deg,#111a22,#6f7b86 50%,#242e38 70%); clip-path:polygon(71% 0,87% 0,25% 93%,25% 100%,0 100%,0 86%); }
+.demo-tv__stand::before { left:0; }.demo-tv__stand::after { right:0; transform:scaleX(-1); }
+.demo-tv--portrait .demo-tv__body { padding:4px 4px 0; }.demo-tv--portrait .demo-tv__bezel { height:12px; }.demo-tv--portrait .demo-tv__stand { height:15px; width:76%; background:linear-gradient(90deg,#19232e,#5a6571,#131c27); clip-path:polygon(40% 0,60% 0,62% 57%,100% 83%,100% 100%,0 100%,0 83%,38% 57%); }.demo-tv--portrait .demo-tv__stand::before,.demo-tv--portrait .demo-tv__stand::after { display:none; }
+@media(prefers-reduced-motion:reduce) { .demo-tv__slide { transition:none; } }
+.widget-example { width: 100%; height: 100%; padding: 5cqw; display: flex; flex-direction: column; color: #fff; overflow: hidden; font-size: 2.5cqw; line-height: 1.3; }
+.widget-example__top { display: flex; justify-content: space-between; gap: 10px; font-size: 2.2cqw; font-weight: 600; letter-spacing: .08em; }
+.widget-example__foot { margin-top: auto; padding-top: 2cqw; font-size: 1.8cqw; opacity: .72; }
+.widget-weather { background: radial-gradient(ellipse at 82% 15%,#438dd1 0,transparent 55%),linear-gradient(140deg,#0c3258,#12698d); }
+.weather-main { display: grid; grid-template-columns: 1fr 36%; align-items: center; margin: 1.5cqw 0; }
+.weather-main > div { display: flex; flex-direction: column; }
+.weather-city { font-size: 3.5cqw; }
+.weather-temp { font-size: 14cqw; font-weight: 500; line-height: 1.1; letter-spacing: -.05em; }
+.weather-condition { font-size: 3cqw; margin-bottom: 1cqw; }
+.weather-main small { opacity: .8; font-size: 2.2cqw; }
+.weather-forecast { display: flex; border-top: 1px solid #ffffff30; padding-top: 2cqw; }
+.weather-forecast > div { flex: 1; display: flex; gap: 1cqw; align-items: center; justify-content: center; }
+.weather-forecast svg { width: 7cqw; }
+.widget-metrics { background: linear-gradient(145deg,#f5f9ff,#e8f2fa); color: #122c43; padding: 4cqw; }
+.widget-metrics .widget-example__top { color: #30627d; }
+.metrics-heading { display: flex; flex-direction: column; gap: .7cqw; margin-top: 2cqw; }
+.metrics-heading > strong { font-size: 5cqw; letter-spacing: -.04em; }
+.metrics-heading > span { font-size: 2.1cqw; color: #597087; }
+.metrics-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4cqw; margin: 2cqw 0; }
+.metrics-stats > div { display: flex; flex-direction: column; border-left: 2px solid #0e8ac4; padding-left: 3cqw; }
+.metrics-stats > div > strong { font-size: 8cqw; line-height: 1.05; letter-spacing: -.06em; }
+.metrics-stats strong span { font-size: 5cqw; }
+.metrics-stats small { color: #557285; font-size: 2cqw; }
+.metrics-chart { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 1cqw; }
+.metrics-chart > span { font-size: 2cqw; color: #557285; }
+.metrics-bars { display: flex; align-items: stretch; flex: 1; min-height: 0; gap: 4cqw; }
+.metrics-bars > div { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: end; }
+.metrics-bars i { display: block; width: 100%; max-width: 6cqw; background: linear-gradient(#18acdc,#076fa6); border-radius: 1cqw 1cqw 0 0; min-height: 2cqw; }
+.metrics-bars span { font-size: 1.7cqw; padding-top: .6cqw; }
+.widget-example--portrait { padding: 8cqw; font-size: 4cqw; }
+.widget-example--portrait .widget-example__top { font-size: 3cqw; flex-wrap: wrap; }
+.widget-example--portrait .weather-main { display: flex; flex-direction: column-reverse; align-items: stretch; text-align: center; margin: 7cqw 0; }
+.widget-example--portrait .weather-main > svg { height: 35cqw; }
+.widget-example--portrait .weather-city { font-size: 7cqw; }
+.widget-example--portrait .weather-temp { font-size: 28cqw; }
+.widget-example--portrait .weather-condition { font-size: 5cqw; }
+.widget-example--portrait .weather-main small { font-size: 4cqw; }
+.widget-example--portrait .weather-forecast > div { flex-direction: column; }
+.widget-example--portrait .weather-forecast svg { width: 16cqw; }
+.widget-example--portrait .widget-example__foot { font-size: 3cqw; }
+.widget-example--portrait .metrics-heading { margin: 8cqw 0 5cqw; }
+.widget-example--portrait .metrics-heading > strong { font-size: 12cqw; }
+.widget-example--portrait .metrics-heading > span { font-size: 4cqw; }
+.widget-example--portrait .metrics-stats { grid-template-columns: 1fr; gap: 8cqw; margin-bottom: 8cqw; }
+.widget-example--portrait .metrics-stats > div > strong { font-size: 23cqw; }
+.widget-example--portrait .metrics-stats small,.widget-example--portrait .metrics-chart > span { font-size: 3.5cqw; }
+.widget-example--portrait .metrics-bars span { font-size: 3cqw; }
+@media(prefers-reduced-motion:reduce) { .demo-tv__slide { transition: none; } }

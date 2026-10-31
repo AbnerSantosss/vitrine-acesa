@@ -1,66 +1,16 @@
-/* RISCO ZERO — estilo próprio da seção.
-   Só tokens do sistema (index.css). Nenhuma cor nova é declarada aqui: se uma
-   cor faltar, ela vira token lá, não valor solto aqui. */
-
-.risco {
-  /* A linha de topo separa esta seção da tabela de preços — é o mesmo
-     separador decorativo do resto da página, não um limite de componente. */
-  border-top: 1px solid var(--borda);
-}
-
-/* .split já faz as duas colunas e o colapso em ≤980px; aqui só o alinhamento
-   vertical, que no mockup é centralizado entre o título e a lista. */
-.risco__grade {
-  align-items: center;
-}
-
-.risco__lista {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.risco__item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  font-size: 17px;
-  line-height: 1.5;
-  color: var(--tinta-2);
-}
-
-.risco__icone {
-  width: 22px;
-  height: 22px;
-  flex: none;
-  /* 25,5px é a altura da linha de texto (17px × 1,5); o deslocamento centra o
-     ícone na primeira linha em vez de colar no topo do bloco. */
-  margin-top: 2px;
-  color: var(--ok);
-}
-
-/* Botão que abre o formulário de contato. É <button>, não link: não navega,
-   dispara ação na própria página. Aparência, hover e sublinhado vêm de
-   .btn--texto + .btn--sublinhado (index.css); o foco é o global de 3px — o
-   de 2px que morava aqui era a única exceção da página.
-   O que fica aqui é só o encaixe DENTRO da frase: inline, e o padding vertical
-   com margem negativa compensando dá área de toque de ~45px sem empurrar a
-   linha do parágrafo. */
-.risco__pedir {
-  display: inline;
-  min-height: 0;
-  padding: 10px 3px;
-  margin: -10px -3px;
-  font-size: inherit;
-  line-height: inherit;
-  text-align: left;
-}
-
-@media (max-width: 980px) {
-  .risco__item {
-    font-size: 16px;
-  }
-}
+.risco { position:relative; isolation:isolate; color:white; background:#09243b; }
+.risco::before { content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(90deg,#061d35c7,#061d35dc),url('/exemplos/garantias-loja.jpg') center/cover; }
+.risco__grade { display:grid; grid-template-columns:1fr 1.1fr; gap:64px; align-items:center; }
+.risco__intro { max-width:470px; }
+.risco__eyebrow { font-size:11px; letter-spacing:.15em; color:#88dbff; font-weight:650; }
+.risco__intro .h2 { color:white; margin:18px 0; font-size:clamp(32px,3.5vw,47px); }
+.risco__intro em { font-style:normal; color:#71d5fc; }
+.risco__intro > p { color:#cee4f3; font-size:17px; line-height:1.65; margin-bottom:26px; }
+.risco__intro .btn { white-space:normal; text-align:left; background:#e9f7ff; color:#075b87; border-color:#e9f7ff; gap:20px; }
+.risco__intro > small { display:block; color:#b9d4e6; font-size:12px; margin-top:14px; max-width:32ch; line-height:1.5; }
+.risco__lista { display:grid; gap:12px; list-style:none; margin:0; padding:0; }
+.risco__item { display:flex; gap:17px; padding:22px; border:1px solid #96c8e641; border-radius:14px; background:#102e47e8; }
+.risco__numero { display:grid; place-items:center; width:34px; height:34px; flex:none; border:1px solid #6ccdf75c; border-radius:50%; color:#83ddff; font-size:11px; font-weight:650; }
+.risco__item h3 { color:#fff; font-size:16px; margin-bottom:6px; }
+.risco__item p { color:#c6dbe9; font-size:13px; line-height:1.6; }
+@media(max-width:760px) { .risco__grade { grid-template-columns:1fr; gap:32px; }.risco__item { padding:18px; }.risco::before { background:linear-gradient(#061d35b8,#061d35f5 50%),url('/exemplos/garantias-loja.jpg') 38% top/auto 620px no-repeat; } }

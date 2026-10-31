@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { 
   LiveClock, RssFeed, WeatherWidget, FullInfoWidget, NotesWidget, 
   TodoWidget, CountdownWidget, ChoresWidget, MealPlanWidget, 
@@ -18,6 +18,57 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { motion, AnimatePresence } from 'motion/react';
 import { getDisplayBySlug, checkDeviceStatus, registerDevice, getDisplayByIdPublic, getBroadcasts, heartbeatDevice, getDisplayVersion } from '../services/storage';
 import { Display, Page, WidgetType, Device, Broadcast } from '../types';
+import { getTextStyle, getImageFilter, getImageFrameStyle, getWidgetTransformStyle } from './editor/widgetStyles';
+import { renderDesignWidget } from './editor/designWidgets';
+import { getCanvasGeometry, isWall, type CanvasGeometry } from './editor/canvasGeometry';
+
+/**
+ * Videowall: `?tv=c-r` diz qual pedaço do mural esta TV mostra (coluna-linha,
+ * a partir de 1). Fora do mural ou ausente = mostra o mural inteiro reduzido.
+ */
+const parseWallTile = (search: string, geo: CanvasGeometry | null): { col: number; row: number } | null => {
+  if (!geo) return null;
+  const raw = new URLSearchParams(search).get('tv');
+  const m = raw ? /^(\d{1,2})-(\d{1,2})$/.exec(raw.trim()) : null;
+  if (!m) return null;
+  const col = Number(m[1]);
+  const row = Number(m[2]);
+  if (col < 1 || row < 1 || col > geo.wallCols || row > geo.wallRows) return null;
+  return { col, row };
+};
+
+/** Palco do videowall: o mural no tamanho nativo, escalado e deslocado para o pedaço desta TV. */
+const WallStage: React.FC<{ geo: CanvasGeometry | null; tile: { col: number; row: number } | null; viewport: { w: number; h: number }; children: React.ReactNode }> = ({ geo, tile, viewport, children }) => {
+  // Tela comum: só repassa. Componente fixo no módulo para o React não remontar a cena a cada render.
+  if (!geo) return <>{children}</>;
+  let scale: number;
+  let x: number;
+  let y: number;
+  if (tile) {
+    scale = Math.min(viewport.w / geo.tileWidth, viewport.h / geo.tileHeight);
+    x = (viewport.w - geo.tileWidth * scale) / 2 - (tile.col - 1) * geo.tileWidth * scale;
+    y = (viewport.h - geo.tileHeight * scale) / 2 - (tile.row - 1) * geo.tileHeight * scale;
+  } else {
+    scale = Math.min(viewport.w / geo.width, viewport.h / geo.height);
+    x = (viewport.w - geo.width * scale) / 2;
+    y = (viewport.h - geo.height * scale) / 2;
+  }
+  return (
+    <div
+      className="absolute overflow-hidden"
+      style={{
+        left: 0,
+        top: 0,
+        width: geo.width,
+        height: geo.height,
+        transform: `translate(${x}px, ${y}px) scale(${scale})`,
+        transformOrigin: '0 0',
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
 const isYouTubeUrl = (url: string) => {
   if (!url) return false;
@@ -119,7 +170,15 @@ export const getAlignmentClasses = (alignment?: 'start' | 'center' | 'end' | 'st
 
 const Player: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const [display, setDisplay] = useState<Display | null>(null);
+  // Tamanho da janela: só o videowall usa (escala do palco).
+  const [viewport, setViewport] = useState(() => ({ w: window.innerWidth, h: window.innerHeight }));
+  useEffect(() => {
+    const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   const [activeIdx, setActiveIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const lastUpdateRef = useRef<number>(0);
@@ -545,21 +604,8 @@ const Player: React.FC = () => {
         
         <div className="z-10 flex flex-col items-center gap-10 animate-in fade-in zoom-in duration-700">
           
-          {/* Logo */}
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-24 h-24 bg-gradient-to-br from-slate-900 to-slate-950 rounded-2xl flex items-center justify-center border border-slate-800 shadow-[0_0_40px_rgba(34,211,238,0.15)] relative group p-4">
-               <div className="absolute inset-0 bg-cyan-500/10 rounded-2xl blur-xl animate-pulse"></div>
-               <img 
-                 src={`${import.meta.env.BASE_URL}logo.png`} 
-                 alt="Logo" 
-                 className="w-full h-full object-contain relative z-10"
-               />
-            </div>
-            <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--noite-titulo)' }}>
-              Tela<span style={{ color: 'var(--luz)' }}>Hub</span>
-            </h1>
-          </div>
-          
+          <span className="brand-lockup brand-lockup--white" role="img" aria-label="Tellas" />
+
           <div className="text-center space-y-2 max-w-md">
             <h2 className="text-xl font-bold text-slate-200 uppercase tracking-widest">Parear Dispositivo</h2>
             <p className="text-slate-500 text-sm leading-relaxed">
@@ -605,6 +651,14 @@ const Player: React.FC = () => {
   if (!page) return null;
   const hasFullScreenRss = page.layout.some(w => w.type === WidgetType.RSS && w.data.rssConfig?.layout === 'ticker');
 
+  // Videowall. Tela comum (sem mural ou 1×1) segue exatamente o caminho de antes.
+  const wallGeo = isWall(display.wall) ? getCanvasGeometry(display.orientation, display.wall) : null;
+  const wallTile = parseWallTile(location.search || window.location.search, wallGeo);
+  const fullSpanCols = wallGeo ? `1 / span ${wallGeo.cols}` : (display.orientation === 'vertical' ? '1 / span 27' : '1 / span 48');
+  const fullSpanRows = wallGeo ? `1 / span ${wallGeo.rows}` : (display.orientation === 'vertical' ? '1 / span 48' : '1 / span 27');
+  // Vídeo do YouTube cobrindo o mural inteiro (16:9 no mínimo do tamanho do palco).
+  const wallVideoWidth = wallGeo ? Math.max(wallGeo.width, (wallGeo.height * 16) / 9) : 0;
+
   return (
     <div className="h-screen w-screen bg-black overflow-hidden flex items-center justify-center relative">
       <AnimatePresence mode="wait">
@@ -617,6 +671,7 @@ const Player: React.FC = () => {
           transition={{ duration: (page.transitionDuration || 500) / 1000, ease: "easeInOut" }}
           className="absolute inset-0 flex items-center justify-center"
         >
+          <WallStage geo={wallGeo} tile={wallTile} viewport={viewport}>
           {/* Backgrounds outside the 16:9 container to fill the entire screen */}
           {page.backgroundVideoUrl && (
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-black">
@@ -625,7 +680,11 @@ const Player: React.FC = () => {
                  <iframe 
                    src={getEmbedUrl(page.backgroundVideoUrl, { autoplay: true, mute: page.backgroundVideoMuted !== false, loop: true, controls: false, youtubeQuality: page.backgroundVideoQuality })} 
                    className="absolute top-1/2 left-1/2 border-none pointer-events-none" 
-                   style={{
+                   style={wallGeo ? {
+                     width: wallVideoWidth,
+                     height: (wallVideoWidth * 9) / 16,
+                     transform: 'translate(-50%, -50%) scale(1.002)',
+                   } : {
                      width: '100vw',
                      height: '56.25vw', /* 16:9 aspect ratio */
                      minHeight: '100vh',
@@ -670,7 +729,7 @@ const Player: React.FC = () => {
 
           {/* Container for Widgets - adapts to display orientation */}
           <div 
-            className={`relative z-10 w-full h-full overflow-hidden ${hasFullScreenRss ? '' : (
+            className={wallGeo ? 'relative z-10 w-full h-full overflow-hidden' : `relative z-10 w-full h-full overflow-hidden ${hasFullScreenRss ? '' : (
               display.orientation === 'vertical'
                 ? 'max-w-[calc(100vh*9/16)] max-h-screen'
                 : 'max-w-[calc(100vh*16/9)] max-h-[calc(100vw*9/16)]'
@@ -678,17 +737,21 @@ const Player: React.FC = () => {
             style={{ containerType: 'size' }}
           >
             <div className={`absolute inset-0 w-full h-full grid gap-0 ${
-              display.orientation === 'vertical' ? 'grid-cols-27-v grid-rows-48-v' : 'grid-cols-48 grid-rows-27'
-            }`}>
+              wallGeo ? '' : display.orientation === 'vertical' ? 'grid-cols-27-v grid-rows-48-v' : 'grid-cols-48 grid-rows-27'
+            }`} style={wallGeo ? {
+              gridTemplateColumns: `repeat(${wallGeo.cols}, minmax(0, 1fr))`,
+              gridTemplateRows: `repeat(${wallGeo.rows}, minmax(0, 1fr))`,
+            } : undefined}>
             {page.layout.map(w => (
               <div 
                 key={w.i}
                 style={{
-                  gridColumn: w.data.fullScreenMode ? (display.orientation === 'vertical' ? '1 / span 27' : '1 / span 48') : `${w.x + 1} / span ${w.w}`, 
-                  gridRow: w.data.fullScreenMode ? (display.orientation === 'vertical' ? '1 / span 48' : '1 / span 27') : `${w.y + 1} / span ${w.h}`,
+                  gridColumn: w.data.fullScreenMode ? fullSpanCols : `${w.x + 1} / span ${w.w}`, 
+                  gridRow: w.data.fullScreenMode ? fullSpanRows : `${w.y + 1} / span ${w.h}`,
                   zIndex: w.data.fullScreenMode ? 99999 : (w.data.zIndex !== undefined ? w.data.zIndex : 10),
                   padding: w.data.padding || undefined,
                   margin: w.data.margin || undefined,
+                  ...getWidgetTransformStyle(w.data),
                 }}
                 className={`w-full h-full relative overflow-hidden flex ${getAlignmentClasses(w.data.fillContainer ? 'stretch' : w.data.contentAlignment)} ${w.data.backgroundAnimation ? getBackgroundAnimationClass(w.data.backgroundAnimation) : ''}`}
               >
@@ -748,7 +811,7 @@ const Player: React.FC = () => {
                         style={{ 
                           width: '100%',
                           height: '100%',
-                          objectFit: (w.data.fillContainer || w.data.fitContainerMode === 'stretch') ? 'fill' : (w.data.fitContainerMode || 'cover'),
+                          objectFit: (w.data.fillContainer || w.data.fitContainerMode === 'stretch') ? 'fill' : (w.data.fitContainerMode || 'cover'), filter: getImageFilter(w.data), ...getImageFrameStyle(w.data),
                         }} 
                       />
                     </div>
@@ -762,35 +825,32 @@ const Player: React.FC = () => {
                         style={{
                           width: '100%',
                           height: '100%',
-                          objectFit: (w.data.fillContainer || w.data.fitContainerMode === 'stretch') ? 'fill' : (w.data.fitContainerMode || 'cover')
+                          objectFit: (w.data.fillContainer || w.data.fitContainerMode === 'stretch') ? 'fill' : (w.data.fitContainerMode || 'cover'), filter: getImageFilter(w.data), ...getImageFrameStyle(w.data),
                         }}
                       />
                     </div>
                   )}
+                  {renderDesignWidget(w, 'player')}
                   {w.type === WidgetType.TEXT && (
                     <div 
                       className="w-full h-full flex"
                       style={{ 
                         alignItems: (w.data.fillContainer || w.data.contentAlignment === 'stretch') ? 'stretch' : w.data.contentAlignment === 'start' ? 'flex-start' : w.data.contentAlignment === 'end' ? 'flex-end' : 'center',
-                        justifyContent: (w.data.fillContainer || w.data.contentAlignment === 'stretch') ? 'stretch' : w.data.contentAlignment === 'start' ? 'flex-start' : w.data.contentAlignment === 'end' ? 'flex-end' : w.data.textConfig?.textAlign === 'left' ? 'flex-start' : w.data.textConfig?.textAlign === 'right' ? 'flex-end' : 'center',
+                        justifyContent: (w.data.fillContainer || w.data.contentAlignment === 'stretch') ? 'stretch' : w.data.textConfig?.textAlign === 'left' ? 'flex-start' : w.data.textConfig?.textAlign === 'right' ? 'flex-end' : w.data.textConfig?.textAlign === 'center' ? 'center' : w.data.contentAlignment === 'start' ? 'flex-start' : w.data.contentAlignment === 'end' ? 'flex-end' : 'center',
                         textAlign: w.data.textConfig?.textAlign || 'center',
-                        color: w.data.color, 
-                        fontSize: w.data.textConfig?.fontSize || w.data.fontSize?.replace('vw', 'cqw') || '4cqw',
-                        fontFamily: w.data.textConfig?.fontFamily,
-                        fontWeight: w.data.textConfig?.fontWeight || 'bold',
-                        fontStyle: w.data.textConfig?.fontStyle || 'normal',
                         padding: w.data.padding !== undefined ? w.data.padding : '2rem',
                       }}
                     >
                       <p 
                         className="leading-tight drop-shadow-2xl"
                         style={{
+                          ...getTextStyle(w.data),
                           animation: w.data.textConfig?.animation === 'fade' ? 'fade-in 1.5s ease-out' :
                                      w.data.textConfig?.animation === 'slide' ? 'slide-up 1s ease-out' :
                                      w.data.textConfig?.animation === 'pulse' ? 'pulse 3s infinite ease-in-out' :
                                      w.data.textConfig?.animation === 'bounce' ? 'bounce 2s infinite' :
                                      w.data.textConfig?.animation === 'typewriter' ? 'typewriter 2s steps(40, end)' : 'none',
-                          whiteSpace: w.data.textConfig?.animation === 'typewriter' ? 'nowrap' : 'normal',
+                          whiteSpace: w.data.textConfig?.animation === 'typewriter' ? 'nowrap' : 'pre-line',
                           overflow: w.data.textConfig?.animation === 'typewriter' ? 'hidden' : 'visible',
                           borderRight: w.data.textConfig?.animation === 'typewriter' ? '2px solid rgba(255,255,255,0.75)' : 'none',
                           maxWidth: '100%'
@@ -960,6 +1020,7 @@ const Player: React.FC = () => {
             ))}
             </div>
           </div>
+          </WallStage>
 
 
       <style>{`

@@ -621,9 +621,9 @@ const Scheduler: React.FC = () => {
                 </button>
                 <div className="w-px h-6 bg-papel-3"></div>
                 <div className="flex items-center gap-2">
-                  <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Logo" className="w-6 h-6 object-contain" />
+                  <span className="brand-lockup" role="img" aria-label="Tellas" />
                   <h1 className="font-bold text-tinta tracking-tight uppercase text-sm">
-                    Tela<span className="text-marca">Hub</span> <span className="text-tinta-3 mx-2">/</span> 
+                    <span className="text-tinta-3 mx-2">/</span> 
                     <span className="text-marca">Programação</span>
                     <span className="text-tinta-3 mx-2">/</span> 
                     <span className="text-tinta-2 normal-case font-medium">{currentBroadcast?.name || 'Nova Programação'}</span>

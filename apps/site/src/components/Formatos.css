@@ -33,3 +33,11 @@
     gap: 20px;
   }
 }
+
+.formato__demo { min-height: 320px; aspect-ratio: 16 / 11; padding: 24px; display: flex; justify-content: center; align-items: center; gap: 24px; overflow: hidden; border: 1px solid var(--marca-borda); border-radius: var(--raio-16); background: rgba(255,255,255,.62); }
+.formato__demo--vertical .demo-tv { max-width: 38%; }
+.formatos__opcoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.formatos__opcoes button { font: inherit; font-size: 14px; min-height: 44px; padding: 10px 16px; border: 1px solid var(--marca-borda); border-radius: 8px; background: var(--papel); color: var(--marca); cursor: pointer; }
+.formatos__opcoes button[aria-pressed="true"] { background: var(--marca); color: white; border-color: var(--marca); }
+.formatos__opcoes button:hover { box-shadow: inset 0 0 0 1px var(--marca); }
+@media(max-width:600px) { .formato__demo { min-height: 240px; padding: 16px; gap: 16px; } }

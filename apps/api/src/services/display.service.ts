@@ -14,7 +14,30 @@ import { isSameTenant, TenantScopeError } from '../middlewares/tenant.middleware
 
 interface PagesWrapper {
   __orientation?: string;
+  /** Mural de TVs (videowall). Ausente ou null = tela comum. */
+  __wall?: DisplayWall | null;
   items: any[];
+}
+
+export interface DisplayWall {
+  cols: number;
+  rows: number;
+}
+
+export const WALL_MAX = 6;
+
+/**
+ * Normaliza o mural. Só vale como mural quando há mais de uma TV
+ * (cols * rows > 1); 1x1 ou valor inválido vira null (tela comum).
+ */
+export function normalizeWall(raw: any): DisplayWall | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const cols = Math.trunc(Number(raw.cols));
+  const rows = Math.trunc(Number(raw.rows));
+  if (!Number.isFinite(cols) || !Number.isFinite(rows)) return null;
+  if (cols < 1 || rows < 1 || cols > WALL_MAX || rows > WALL_MAX) return null;
+  if (cols * rows <= 1) return null;
+  return { cols, rows };
 }
 
 // Displays antigos (pré-refatoração para react-grid-layout) guardavam os widgets
@@ -31,7 +54,7 @@ function normalizePage(page: any): any {
   return page;
 }
 
-function parsePagesField(raw: string | any): { pages: any[]; orientation?: string } {
+function parsePagesField(raw: string | any): { pages: any[]; orientation?: string; wall: DisplayWall | null } {
   const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
 
   // Novo formato wrapper: { __orientation, items }
@@ -39,32 +62,26 @@ function parsePagesField(raw: string | any): { pages: any[]; orientation?: strin
     return {
       pages: parsed.items.map(normalizePage),
       orientation: parsed.__orientation || undefined,
+      wall: normalizeWall(parsed.__wall),
     };
   }
 
   // Formato legado: array direto de pages
   if (Array.isArray(parsed)) {
-    return { pages: parsed.map(normalizePage), orientation: undefined };
+    return { pages: parsed.map(normalizePage), orientation: undefined, wall: null };
   }
 
-  return { pages: [], orientation: undefined };
+  return { pages: [], orientation: undefined, wall: null };
 }
 
-function serializePagesField(pages: any, orientation?: string): string {
+function serializePagesField(pages: any, orientation?: string, wall?: DisplayWall | null): string {
   const pagesArray = Array.isArray(pages) ? pages : (typeof pages === 'string' ? JSON.parse(pages) : []);
 
-  if (orientation) {
-    const wrapper: PagesWrapper = {
-      __orientation: orientation,
-      items: pagesArray,
-    };
-    return JSON.stringify(wrapper);
-  }
-
-  // Se não tem orientation, usa formato wrapper mesmo assim para consistência futura
-  const wrapper: PagesWrapper = {
-    items: pagesArray,
-  };
+  // Sem orientation usa o wrapper mesmo assim, para consistência futura.
+  const wrapper: PagesWrapper = { items: pagesArray };
+  if (orientation) wrapper.__orientation = orientation;
+  const normalizedWall = normalizeWall(wall);
+  if (normalizedWall) wrapper.__wall = normalizedWall;
   return JSON.stringify(wrapper);
 }
 
@@ -76,11 +93,12 @@ export class DisplayService {
   async getAll(tenantId?: TenantScope) {
     const displays = await displayRepository.findAll(tenantId);
     return displays.map((d) => {
-      const { pages, orientation } = parsePagesField(d.pages);
+      const { pages, orientation, wall } = parsePagesField(d.pages);
       return {
         ...d,
         pages,
         orientation,
+        wall,
       };
     });
   }
@@ -93,11 +111,12 @@ export class DisplayService {
   async getById(id: string) {
     const display = await displayRepository.findById(id);
     if (!display) return null;
-    const { pages, orientation } = parsePagesField(display.pages);
+    const { pages, orientation, wall } = parsePagesField(display.pages);
     return {
       ...display,
       pages,
       orientation,
+      wall,
     };
   }
 
@@ -105,22 +124,24 @@ export class DisplayService {
   async getByIdScoped(id: string, tenantId: TenantScope) {
     const display = await displayRepository.findByIdScoped(id, tenantId);
     if (!display) return null;
-    const { pages, orientation } = parsePagesField(display.pages);
+    const { pages, orientation, wall } = parsePagesField(display.pages);
     return {
       ...display,
       pages,
       orientation,
+      wall,
     };
   }
 
   async getBySlug(slug: string) {
     const display = await displayRepository.findBySlug(slug);
     if (!display) return null;
-    const { pages, orientation } = parsePagesField(display.pages);
+    const { pages, orientation, wall } = parsePagesField(display.pages);
     return {
       ...display,
       pages,
       orientation,
+      wall,
     };
   }
 
@@ -133,11 +154,12 @@ export class DisplayService {
   async getByPublicRef(ref: string) {
     const display = await displayRepository.findByPublicRef(ref);
     if (!display) return null;
-    const { pages, orientation } = parsePagesField(display.pages);
+    const { pages, orientation, wall } = parsePagesField(display.pages);
     return {
       ...display,
       pages,
       orientation,
+      wall,
     };
   }
 
@@ -159,12 +181,20 @@ export class DisplayService {
    * outro tenant lança `TenantScopeError` (a rota traduz para 404).
    */
   async save(
-    data: { id?: string; name: string; slug: string; pages: any; coverImage?: string | null; orientation?: string },
+    data: {
+      id?: string;
+      name: string;
+      slug: string;
+      pages: any;
+      coverImage?: string | null;
+      orientation?: string;
+      /** undefined = manter o mural que já existe; null = tela comum. */
+      wall?: DisplayWall | null;
+    },
     tenantId: TenantScope
   ): Promise<{ display: any; created: boolean }> {
-    const pagesStr = serializePagesField(data.pages, data.orientation);
-
     let existingOrganizationId: string | null | undefined;
+    let existingWall: DisplayWall | null = null;
     let created = true;
 
     if (data.id) {
@@ -174,9 +204,18 @@ export class DisplayService {
           throw new TenantScopeError('Display não encontrado.');
         }
         existingOrganizationId = existing.organizationId;
+        try {
+          existingWall = parsePagesField(existing.pages).wall;
+        } catch {
+          existingWall = null;
+        }
         created = false;
       }
     }
+
+    // Cliente antigo que não manda o campo wall não pode desfazer um mural sem querer.
+    const wall = data.wall === undefined ? existingWall : normalizeWall(data.wall);
+    const pagesStr = serializePagesField(data.pages, data.orientation, wall);
 
     // Toda Display precisa pertencer a uma Organização. Prioridade:
     // 1) escopo do tenant da requisição; 2) organização que o display já tinha
@@ -200,8 +239,11 @@ export class DisplayService {
       organizationId,
     });
     // Return with parsed pages and orientation
-    const { pages, orientation } = parsePagesField(result.pages);
-    return { display: { ...result, pages, orientation }, created };
+    const parsed = parsePagesField(result.pages);
+    return {
+      display: { ...result, pages: parsed.pages, orientation: parsed.orientation, wall: parsed.wall },
+      created,
+    };
   }
 
   /**

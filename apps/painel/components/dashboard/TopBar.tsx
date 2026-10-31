@@ -40,7 +40,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   // Pílula de contagem. Rótulo em tinta-2 e número em Geist Mono: os quatro
   // números lado a lado se leem como uma régua, sem cor de destaque em cada um.
   const pilula =
-    'inline-flex items-center gap-2 rounded-md border border-borda bg-papel-2 px-2.5 py-1.5 text-[13px]';
+    'hub-stat inline-flex items-center gap-2 rounded-md border border-borda bg-papel-2 px-2.5 py-1.5 text-[13px]';
   const rotulo = 'font-medium text-tinta-2';
   const numero = 'font-mono text-sm font-semibold tabular-nums';
   // Botões de ícone: 44px no celular (alvo de toque), 36px a partir de lg. Sem
@@ -53,36 +53,20 @@ export const TopBar: React.FC<TopBarProps> = ({
   return (
     // Mesma barra da landing (apps/site Navbar.css): papel, borda fina e a
     // sombra da navbar. Aqui fica dentro do container, por isso tem raio.
-    <div className="relative z-10 mb-3 flex w-full flex-col items-start justify-between gap-4 rounded-xl border border-borda bg-papel px-4 py-3 shadow-navbar sm:px-5 lg:flex-row lg:items-center">
+    <div className="hub-topbar relative z-10 mb-3 flex w-full flex-col items-start justify-between gap-4 rounded-xl border border-borda bg-papel px-4 py-3 shadow-navbar sm:px-5 lg:flex-row lg:items-center">
       {/* 1. Marca */}
       <div className="flex w-full flex-shrink-0 items-center justify-between gap-3 lg:w-auto lg:justify-start">
         <button
           type="button"
           onClick={() => navigate('/')}
-          className="flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg border-0 bg-transparent p-0 text-left"
+          className="hub-brand flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg border-0 bg-transparent p-0 text-left"
           title="Ir para o início"
           aria-label="Ir para o início"
         >
           {/* O mesmo quadrado da navbar do site: marca com a TV em traço claro. */}
-          <span className="inline-flex size-8 flex-none items-center justify-center rounded-md bg-marca" aria-hidden="true">
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--papel)"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="2" y="5" width="20" height="13" rx="2" />
-              <path d="M8 22h8M12 18v4" />
-            </svg>
-          </span>
+          
           <span className="flex-shrink-0">
-            <span className="block text-lg font-extrabold leading-none tracking-[-0.01em] text-tinta">
-              TelaHub
-            </span>
+            <span className="brand-lockup brand-lockup--white" role="img" aria-label="Tellas" />
             <span className="mt-1 block whitespace-nowrap text-[13px] font-medium text-tinta-3">
               Bem-vindo, {currentUser?.name?.trim().split(/\s+/)[0] || currentUser?.username || 'admin'}
             </span>
@@ -105,7 +89,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       </div>
 
       {/* 2. Contagens */}
-      <div className="flex w-full flex-1 flex-wrap items-center gap-2 lg:w-auto lg:justify-center">
+      <div className="hub-stats flex w-full flex-1 flex-wrap items-center gap-2 lg:w-auto lg:justify-center">
         <div className={pilula}>
           <Monitor size={14} className="text-marca" aria-hidden="true" />
           <span className={rotulo}>Telas</span>
@@ -151,7 +135,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           variant="glow"
           onClick={onCreateDisplay}
           disabled={loading}
-          className="h-11 flex-1 gap-1.5 rounded-lg px-4 text-sm font-semibold lg:h-9 lg:flex-none"
+          className="hub-primary-action h-11 flex-1 gap-1.5 rounded-lg px-4 text-sm font-semibold lg:h-9 lg:flex-none"
         >
           <Plus size={15} strokeWidth={2.5} />
           <span>Nova Tela</span>

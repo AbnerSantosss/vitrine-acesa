@@ -2,43 +2,7 @@ import { signupUrl } from '../lib/funnel';
 import { EVENT, track } from '../lib/tracking';
 import './Passos.css';
 
-/**
- * PASSOS — "Leva menos tempo que fazer um cartaz."
- *
- * ── Por que a seção existe ──────────────────────────────────────────────────
- * A objeção que mata a venda não é preço, é medo de instalação: quem nunca
- * ligou nada numa TV imagina técnico, cabo, caixinha, mensalidade de aparelho.
- * A seção existe para matar esse medo em três linhas — criar, arrastar,
- * digitar seis dígitos — e para provar a terceira com a foto da tela de
- * verdade, não com um desenho.
- *
- * ── Por que a captura é real ────────────────────────────────────────────────
- * A imagem à direita é o que a TV mostra ANTES de o cliente digitar o código.
- * É a primeira coisa que ele vai ver na parede dele, e é justamente a etapa de
- * que ele desconfia. Uma ilustração bonita aqui valeria menos que a foto feia
- * do produto rodando; a legenda diz "tela real" porque isso é o argumento.
- *
- * ── O que ela não pode dizer ────────────────────────────────────────────────
- * Nem "app", nem "aparelho", nem "instalação": o caminho é o navegador que já
- * existe na TV. Nada de tempo prometido em minutos ("em 5 minutos", "3
- * cliques"), nada de "sem técnico" travestido de garantia, nada de prazo de
- * teste. O aviso de queda diz o que o sistema faz — manda um e-mail — e não
- * promete monitoramento, uptime nem funcionamento sem internet.
- *
- * ── Por que existe um botão aqui, e por que ele tem plano B ─────────────────
- * Quem termina de ler os três passos acabou de perder o medo da instalação: é
- * o segundo melhor momento da página para converter, depois do herói, e até
- * agora a seção terminava sem saída. `cta_location: 'passos'` separa esse
- * clique do clique do topo — sem isso, os dois somem dentro do mesmo número e
- * não dá para saber se a objeção que a seção resolve é a que trava a venda.
- *
- * A `prop` é OPCIONAL de propósito: hoje `App.jsx` renderiza `<Passos />` sem
- * nenhuma, e um botão que depende de prop inexistente seria um clique morto no
- * ar. Sem a prop, a seção usa `signupUrl('gratis', 1)`, o MESMO destino que
- * `conversionDestination('gratis')` escolhe, inclusive com a atribuição de
- * campanha na URL. Quando a prop chegar, ela ganha, porque o caminho único de
- * conversão do `App.jsx` também dispara o `begin_checkout`.
- */
+// The pairing preview is illustrative and follows the current product identity.
 
 const PASSOS = [
   {
@@ -50,8 +14,8 @@ const PASSOS = [
     texto: 'Texto, foto, vídeo, relógio, clima, notícias, agenda, PDF. Aperte Salvar.',
   },
   {
-    titulo: 'Digite o código na TV',
-    texto: 'Abra o navegador da TV, entre no endereço e digite os 6 dígitos que aparecem. A TV passa a mostrar a sua tela.',
+    titulo: 'Vincule a TV pelo código',
+    texto: 'Abra o endereço de exibição no navegador da TV. No painel, escolha Vincular TV e informe os 6 dígitos que aparecem no aparelho.',
   },
 ];
 
@@ -106,18 +70,9 @@ export default function Passos({ startConversion }) {
         </div>
 
         <figure className="passos__midia reveal">
-          <div className="shot">
-            <img
-              src="/capturas/real-tv-codigo.jpg"
-              width="1100"
-              height="551"
-              loading="lazy"
-              decoding="async"
-              alt="Tela da TV mostrando o código de pareamento de 6 dígitos, em letras grandes sobre fundo escuro, com o endereço a digitar no navegador."
-            />
-          </div>
+          <div className="shot pairing-preview"><div className="pairing-preview__brand"><span className="brand-lockup brand-lockup--white" role="img" aria-label="Tellas" /></div><span className="pairing-preview__eyebrow">SUA PRÓXIMA TELA COMEÇA AQUI</span><h3>Conecte sua TV.</h3><p>No painel, escolha Vincular TV e informe<br />o código exibido no seu aparelho.</p><div className="pairing-preview__code" aria-label="Código demonstrativo 000000">{[0,1,2,3,4,5].map(n=><span key={n}>0</span>)}</div><small><i /> Aguardando conexão · código demonstrativo</small></div>
           <figcaption className="cap passos__legenda">
-            Tela real: é o que a TV mostra até você digitar o código.
+            Simulação de pareamento com a identidade visual atual.
           </figcaption>
         </figure>
       </div>

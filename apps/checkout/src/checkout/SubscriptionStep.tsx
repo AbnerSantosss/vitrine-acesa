@@ -55,6 +55,8 @@ const FEATURE_LABELS: Record<string, string> = {
   auditoria: 'Registro de auditoria de publicação',
   powerbi: 'Painéis de gestão na tela',
   'agendamento-avancado': 'Agendamento por faixa de horário',
+  'ia-criacao': 'Criação de imagens e cenas com IA',
+  videowall: 'Videowall: várias TVs formando uma tela',
 };
 
 const featureLabel = (slug: string): string | null => FEATURE_LABELS[slug] ?? null;

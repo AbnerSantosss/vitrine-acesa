@@ -29,6 +29,7 @@ const EmailPage = lazy(() => import('./admin/email/EmailPage'));
 const CampanhaEditorPage = lazy(() => import('./admin/email/CampanhaEditorPage'));
 const PagamentosPage = lazy(() => import('./admin/PagamentosPage'));
 const LeadsPage = lazy(() => import('./admin/LeadsPage'));
+const IaCriacaoPage = lazy(() => import('./admin/IaCriacaoPage'));
 const ToasterAdmin = lazy(() => import('./lib/ToasterAdmin'));
 
 // O sonner injeta uma folha de estilo no <head> assim que carrega. Só o
@@ -89,6 +90,7 @@ const App = () => (
           <Route path="email/campanhas/:id" element={<CampanhaEditorPage />} />
           <Route path="pagamentos" element={<PagamentosPage />} />
           <Route path="leads" element={<LeadsPage />} />
+          <Route path="ia" element={<IaCriacaoPage />} />
         </Route>
 
         {/* A raiz vai para o checkout: é o que um visitante espera ao acessar o

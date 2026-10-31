@@ -1,18 +1,18 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Em produção, uploads de mídia precisam ser persistidos no R2 — sem isso,
-// arquivos salvos em disco local são perdidos a cada reinício de container.
-if (process.env.NODE_ENV === 'production') {
-  const requiredR2Vars = ['R2_ENDPOINT', 'R2_ACCESS_KEY', 'R2_SECRET_KEY', 'R2_BUCKET'];
-  const missingR2Vars = requiredR2Vars.filter((key) => !process.env[key]);
-  if (missingR2Vars.length > 0) {
-    console.error(
-      `❌ Boot abortado: variáveis de R2 obrigatórias em produção ausentes: ${missingR2Vars.join(', ')}. ` +
-      'Configure-as antes de subir o backend (ver backend/.env.example).'
-    );
-    process.exit(1);
-  }
+import { getMediaStorage } from './lib/media-storage';
+
+// Onde a mídia fica é decidido num lugar só (`lib/media-storage.ts`, variável
+// MEDIA_STORAGE). Em produção sem R2, `MEDIA_STORAGE=local` exige volume
+// persistente em /app/uploads; configuração impossível aborta o boot.
+const mediaStorage = getMediaStorage();
+if (mediaStorage.fatal) {
+  console.error(`❌ Boot abortado: ${mediaStorage.fatal}`);
+  process.exit(1);
+}
+if (mediaStorage.warning) {
+  console.warn(`⚠️  ${mediaStorage.warning}`);
 }
 
 // A validação do JWT_SECRET NÃO fica aqui de propósito: ela vive em
@@ -33,6 +33,7 @@ import broadcastsRoutes from './routes/broadcasts.routes';
 import usersRoutes from './routes/users.routes';
 import mediaRoutes from './routes/media.routes';
 import settingsRoutes from './routes/settings.routes';
+import aiRoutes from './routes/ai.routes';
 import organizationsRoutes from './routes/organizations.routes';
 import auditRoutes from './routes/audit.routes';
 import signupRoutes from './routes/signup.routes';
@@ -204,6 +205,9 @@ app.use('/api/broadcasts', broadcastsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/settings', settingsRoutes);
+// IA de criação (gerar/editar imagem, tela pronta). Chave e provedor ficam no
+// servidor; configuração em /api/admin/ai (só master).
+app.use('/api/ai', aiRoutes);
 app.use('/api/organizations', organizationsRoutes);
 // Trilha de auditoria (feature `auditoria`, plano Loja para cima).
 app.use('/api/audit-logs', auditRoutes);
@@ -226,7 +230,7 @@ if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Backend disponível em http://localhost:${PORT}`);
     console.log(`📁 Uploads servidos em http://localhost:${PORT}/uploads/`);
-    console.log(`🔧 Modo R2: ${!!(process.env.R2_ENDPOINT) ? 'ATIVADO' : 'DESATIVADO (local)'}`);
+    console.log(`🔧 Mídia: ${mediaStorage.mode === 'r2' ? 'R2' : 'disco local'} (${mediaStorage.source})`);
   });
 
   startDeviceHeartbeatAlertJob();
