@@ -614,7 +614,7 @@ html[data-superficie="tv"] body {
   height: 76%;
   aspect-ratio: 9 / 16;
 }
-.tv-frame svg {
+.tv-frame svg:not(.tv-frame__vazia) {
   color: var(--noite-texto);
   opacity: 0.55;
   transition: color 0.3s, opacity 0.3s;
@@ -623,7 +623,7 @@ html[data-superficie="tv"] body {
   .display-card:hover .tv-frame {
     transform: scale(1.03);
   }
-  .display-card:hover .tv-frame svg {
+  .display-card:hover .tv-frame svg:not(.tv-frame__vazia) {
     color: var(--luz);
     opacity: 1;
   }

@@ -219,11 +219,6 @@
     font-size: 10px;
     padding: 6px;
   }
-
-  .hub-canvas-stage .hub-canvas-example__caption button {
-    min-height: 32px;
-    padding: 4px 8px;
-  }
 }
 
 /* Zoom: a área rola quando a cena fica maior que ela. No modo "Ajustado" não

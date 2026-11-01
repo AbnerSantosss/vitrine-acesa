@@ -22,6 +22,7 @@ import { motion } from 'motion/react';
 import { cardItem } from '../../libs/motion';
 import { Button } from '../ui/button';
 import { moverSpotlight } from '../../lib/spotlight';
+import { TelaVazia } from '../TelaVazia';
 
 interface DisplayCardProps {
   display: Display;
@@ -133,8 +134,8 @@ export const DisplayCard: React.FC<DisplayCardProps> = ({
               <img src={display.coverImage} alt={display.name} />
             ) : (
               <>
-                <img src={`${import.meta.env.BASE_URL}exemplos/${isVertical ? 'arte-moda' : 'arte-cafe'}.jpg`} alt="Exemplo ilustrativo de conteúdo; esta não é uma captura da tela cadastrada." loading="lazy" />
-                <span className="hub-example-label">Exemplo visual</span>
+                <TelaVazia vertical={isVertical} className="tv-frame__vazia" />
+                <span className="hub-example-label">Sem conteúdo</span>
               </>
             )}
           </div>

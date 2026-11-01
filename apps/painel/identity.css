@@ -41,7 +41,9 @@
 
 .tv-frame { position: relative; overflow: hidden; }
 .hub-example-label { position: absolute; bottom: 5px; left: 5px; border-radius: 4px; padding: 2px 5px; background: rgba(7,20,38,.88); color: white; font-size: 9px; line-height: 1.4; }
-.hub-canvas-example { position: absolute; inset: 0; z-index: 25; }
-.hub-canvas-example > img { width: 100%; height: 100%; object-fit: cover; }
-.hub-canvas-example__caption { position: absolute; inset: auto 0 0; padding: 10px 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; color: var(--noite-titulo); background: rgba(7,20,38,.94); font-size: 12px; }
-.hub-canvas-example__caption button { cursor: pointer; border: 1px solid var(--luz); border-radius: 6px; padding: 8px 12px; min-height: 40px; color: var(--noite); background: var(--luz); font-weight: 600; }
+/* Cena vazia do editor e cartão da tela sem capa: a arte é o SVG de TelaVazia.tsx
+   (esquema neutro de layout, cores da marca), não uma foto de exemplo. */
+.tv-frame__vazia { width: 100%; height: 100%; display: block; }
+.hub-canvas-example { position: absolute; inset: 0; z-index: 25; pointer-events: none; }
+.hub-canvas-example > svg { width: 100%; height: 100%; display: block; }
+.hub-canvas-example__caption { position: absolute; inset: auto 0 0; padding: 10px 12px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--noite-titulo); background: rgba(7,20,38,.94); font-size: 12px; line-height: 1.4; }

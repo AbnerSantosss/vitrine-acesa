@@ -18,6 +18,7 @@ import { getTextStyle, getImageFilter, getImageFrameStyle, getWidgetTransformSty
 import { clampZoom } from './ZoomControl';
 import { renderDesignWidget } from './designWidgets';
 import { nomeDoElemento } from './nomesDosElementos';
+import { TelaVazia } from '../TelaVazia';
 
 interface CanvasProps {
   /** null = Ajustado. Número = escala real (1 = 100%). */
@@ -445,11 +446,6 @@ export const Canvas: React.FC<CanvasProps> = ({
   }, [wheelEnabled]);
 
   const emptyScene = activePage.layout.length === 0 && !activePage.backgroundImage && !activePage.backgroundVideoUrl && (!activePage.backgroundAnimation || activePage.backgroundAnimation === 'none');
-  const exampleImage = `${import.meta.env.BASE_URL}exemplos/${display.orientation === 'vertical' ? 'arte-moda' : 'arte-cafe'}.jpg`;
-  const useExample = () => setDisplay(previous => previous ? {
-    ...previous,
-    pages: previous.pages.map((page, index) => index === activePageIdx ? { ...page, backgroundImage: exampleImage } : page),
-  } : previous);
 
   // RGL also emits layout changes while mounting/measuring. Commit only the
   // item the person actually moved or resized, preserving all other scene data.
@@ -597,11 +593,10 @@ export const Canvas: React.FC<CanvasProps> = ({
               )}
             </div>
             {emptyScene && (
-              <div className="hub-canvas-example">
-                <img src={exampleImage} alt="Sugestão de arte para começar sua tela." />
+              <div className="hub-canvas-example" aria-hidden="true">
+                <TelaVazia vertical={display.orientation === 'vertical'} />
                 <div className="hub-canvas-example__caption">
-                  <span>Exemplo visual · sua cena ainda está vazia</span>
-                  <button type="button" onClick={useExample}>Usar imagem de exemplo</button>
+                  <span>Sua cena ainda está vazia. Escolha um elemento no catálogo para começar.</span>
                 </div>
               </div>
             )}
