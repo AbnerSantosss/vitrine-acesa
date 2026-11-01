@@ -17,6 +17,7 @@ import './CanvasStage.css';
 import { getTextStyle, getImageFilter, getImageFrameStyle, getWidgetTransformStyle } from './widgetStyles';
 import { clampZoom } from './ZoomControl';
 import { renderDesignWidget } from './designWidgets';
+import { nomeDoElemento } from './nomesDosElementos';
 
 interface CanvasProps {
   /** null = Ajustado. Número = escala real (1 = 100%). */
@@ -561,6 +562,10 @@ export const Canvas: React.FC<CanvasProps> = ({
                 {activePage.layout.map(widget => {
                   const widgetZIndex = widget.data.fullScreenMode ? 99999 : (widget.data.zIndex ?? 10);
                   const onSeam = wall && !widget.data.fullScreenMode && isSeamSensitive(widget) && crossesWallSeam(widget, geometry);
+                  const selecionado = selectedWidget === widget.i;
+                  const etiqueta = selecionado ? nomeDoElemento(widget.type) : '';
+                  // Sem espaço acima da caixa (elemento no topo da cena), a etiqueta entra pelo canto de cima.
+                  const etiquetaDentro = widget.y * geometry.cellSize * (scale || 1) < 24;
                   return (
                     <div
                       key={widget.i}
@@ -578,6 +583,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                         </Suspense>
                         <div className="hub-canvas-widget__drag-surface" aria-hidden="true" />
                       </div>
+                      {etiqueta && <span className={`hub-canvas-widget__label${etiquetaDentro ? ' is-inside' : ''}`} aria-hidden="true">{etiqueta}</span>}
                       {onSeam && <span className="hub-canvas-seam-badge" role="note">Fica na divisão entre TVs</span>}
                     </div>
                   );

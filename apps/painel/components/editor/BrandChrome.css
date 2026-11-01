@@ -1,32 +1,41 @@
 
-/* Brand surfaces: exact supplied cyan and blue; crisp labels over frosted controls. */
-.hub-topbar,.hub-toolbar {background:linear-gradient(110deg,#02c2cd 0%,#2e7ce1 100%);border-color:#ffffff40;color:#fff;--borda:#ffffff36;--borda-2:#ffffff70;--borda-3:#ffffff70;}
+/* Barra superior: gradiente da paleta oficial (--marca para --marca-hover). Texto branco: 5,9:1 em --marca e 8,0:1 em --marca-hover. Botões em branco quase opaco com texto --tinta. */
+.hub-topbar,.hub-toolbar {background:linear-gradient(110deg,var(--marca,#0369a1) 0%,var(--marca-hover,#025584) 100%);border-color:#ffffff40;color:#fff;--borda:#ffffff36;--borda-2:#ffffff70;--borda-3:#ffffff70;}
 .hub-topbar .hub-brand,.hub-toolbar .hub-brand {color:#fff;background:#07395655;border-radius:10px;padding:7px 10px;}
 .hub-topbar .hub-brand span,.hub-toolbar .hub-brand h1,.hub-toolbar .hub-brand h1 span {color:#fff;}
 .hub-topbar .brand-symbol,.hub-toolbar .brand-symbol {filter:brightness(0) invert(1);}
 .hub-topbar .hub-stat {background:#fffdfd;border-color:#fff8;color:#143552;}
-.hub-topbar button:not(.hub-brand),.hub-toolbar button {background:#ffffffde;border:1px solid #fff9;color:#123750;box-shadow:0 2px 5px #06345412;transition:background 160ms,box-shadow 160ms,transform 160ms;backdrop-filter:blur(3px);}
+.hub-topbar button:not(.hub-brand),.hub-toolbar button {background:#ffffffde;border:1px solid #fff9;color:var(--tinta,#0a1223);box-shadow:0 2px 5px #06345412;transition:background 160ms,box-shadow 160ms,transform 160ms;backdrop-filter:blur(3px);}
 .hub-topbar button svg,.hub-toolbar button svg {color:currentColor;}
-.hub-topbar button.hub-primary-action,.hub-toolbar button.hub-primary-action {background:#083d65;color:white;border-color:#083d65;box-shadow:0 4px 12px #083d6540;}
+.hub-topbar button.hub-primary-action,.hub-toolbar button.hub-primary-action {background:var(--tinta,#0a1223);color:white;border-color:#ffffff8c;box-shadow:0 4px 12px #0a122359;}
 .hub-toolbar {gap:16px;flex-shrink:0;min-height:72px;}
 .hub-toolbar>div {min-width:0;}
 .hub-toolbar .hub-brand h1 {max-width:210px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.hub-topbar button:focus-visible,.hub-toolbar button:focus-visible {outline:3px solid #072e4e;outline-offset:3px;}
-.hub-toolbar button[aria-expanded="true"] {background:#083d65;color:white;}
+.hub-topbar button:focus-visible,.hub-toolbar button:focus-visible {outline:3px solid #fff;outline-offset:2px;}
+.hub-toolbar button[aria-expanded="true"] {background:var(--tinta,#0a1223);color:white;}
 @media(hover:hover) and (pointer:fine) {
- .hub-topbar button:not(:disabled):hover,.hub-toolbar button:not(:disabled):hover {backdrop-filter:blur(7px);box-shadow:0 5px 17px #083d6545,0 0 13px #ffffff70;transform:translateY(-1px);}
+ .hub-topbar button:not(:disabled):hover,.hub-toolbar button:not(:disabled):hover {backdrop-filter:blur(7px);box-shadow:0 5px 17px #0a122345,0 0 13px #ffffff70;transform:translateY(-1px);}
 }
 .hub-editor-workspace .hub-canvas {min-width:0;min-height:0;}
-.hub-layers-dock {position:relative;flex:0 0 310px;width:310px;min-height:0;background:#f8fbff;border-left:1px solid #d7e6f1;}
+.hub-layers-dock {position:relative;flex:0 0 310px;width:310px;min-height:0;background:rgba(255,255,255,.5);-webkit-backdrop-filter:blur(20px) saturate(170%);backdrop-filter:blur(20px) saturate(170%);border-left:1px solid rgba(255,255,255,.8);box-shadow:-1px 0 0 rgba(10,18,35,.06);}
 .hub-layers-inner {height:100%;display:flex;flex-direction:column;overflow:hidden;padding:18px 14px;}
 .hub-layers-inner h3 {font-size:11px;letter-spacing:.02em;}
 .hub-layers-inner>div:first-child button {min-width:36px;min-height:36px;display:grid;place-items:center;}
 .hub-layer-properties {font-size:12px;padding:10px;background:#e3f8fb;color:#075474;border-radius:8px;margin-bottom:12px;}
-.hub-widget-tool {min-height:76px;background:linear-gradient(150deg,#fff,#f1f8fd);border-color:#dfebf4;}
+/* Blocos de Elementos em vidro: quadrado de cantos arredondados, branco a 36% com borda clara e brilho na aresta de cima,
+   sem backdrop-filter próprio (o painel já desfoca; desfoque empilhado pesa). Azul só no hover, foco e arrasto. */
+.hub-left button.hub-widget-tool {min-height:84px;background:rgba(255,255,255,.36);border:1px solid rgba(255,255,255,.85);border-radius:16px;box-shadow:0 0 0 1px rgba(10,18,35,.05),inset 0 1px 0 rgba(255,255,255,.95),0 8px 22px rgba(10,18,35,.08);transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease,background-color .15s ease;}
+.hub-left button.hub-widget-tool:not(:disabled):hover,.hub-left button.hub-widget-tool:not(:disabled):focus-visible {transform:translateY(-2px);z-index:2;background:rgba(255,255,255,.7);border-color:var(--marca,#0369a1);box-shadow:0 0 0 1px rgba(var(--marca-rgb,3,105,161),.35),inset 0 1px 0 rgba(255,255,255,.95),0 10px 26px rgba(var(--marca-rgb,3,105,161),.28);}
+.hub-left button.hub-widget-tool:focus-visible {outline:2px solid var(--ring,var(--marca,#0369a1));outline-offset:2px;}
+/* Arrastando (ou pressionado): borda de 2 px em --marca (1 px de borda + 1 px de anel, sem mexer no layout). */
+.hub-left button.hub-widget-tool[aria-grabbed="true"],.hub-left button.hub-widget-tool:not(:disabled):active {border-color:var(--marca,#0369a1);box-shadow:0 0 0 1px var(--marca,#0369a1),0 6px 18px rgba(var(--marca-rgb,3,105,161),.18);}
+.hub-left button.hub-widget-tool:disabled {box-shadow:0 0 0 1px rgba(10,18,35,.05);}
 .hub-widget-icon {width:46px;height:46px;background:transparent!important;filter:none;overflow:hidden;}
 .hub-widget-art {display:block;width:46px;height:46px;background-image:url('../../public/widget-art/widgets-3d.png');background-size:500% 545.217%;background-repeat:no-repeat;}
-.hub-widget-tool>span:last-child {font-size:9px;text-transform:none;letter-spacing:0;line-height:1.2;white-space:normal;}
+.hub-widget-tool>span:last-child {font-size:12px;font-weight:600;color:var(--tinta,#0a1223);text-transform:none;letter-spacing:0;line-height:1.2;white-space:normal;}
+.hub-widget-tool:disabled>span:last-child {color:var(--tinta-3,#55637d);}
 .hub-widget-tool:disabled .hub-widget-art {filter:grayscale(.7);}
+@media(prefers-reduced-motion:reduce) {.hub-left button.hub-widget-tool {transition:none;}.hub-left button.hub-widget-tool:not(:disabled):hover,.hub-left button.hub-widget-tool:not(:disabled):focus-visible {transform:none;}}
 @media(min-width:768px) and (max-width:1150px) {
  .hub-toolbar {flex-wrap:wrap;height:auto;padding:10px 16px;gap:10px;}
  .hub-widget-library {width:220px;}
@@ -64,15 +73,15 @@
 /* Barra de cenas: fica abaixo do canvas, em fundo claro. */
 .hub-editor-center {flex:1 1 0;display:flex;flex-direction:column;min-width:0;min-height:0;}
 .hub-editor-center .hub-canvas {flex:1 1 0;}
-.hub-scenebar {flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 16px;background:#f8fbff;border-top:1px solid #d7e6f1;overflow-x:auto;scrollbar-width:none;}
+.hub-scenebar {flex-shrink:0;display:flex;align-items:center;gap:8px;padding:10px 16px;background:rgba(255,255,255,.5);-webkit-backdrop-filter:blur(20px) saturate(170%);backdrop-filter:blur(20px) saturate(170%);border-top:1px solid rgba(255,255,255,.8);overflow-x:auto;scrollbar-width:none;}
 .hub-scenebar::-webkit-scrollbar {display:none;}
-.hub-scenebar .hub-scene {background:#fff;border:1px solid #d7e6f1;border-radius:999px;overflow:hidden;}
+.hub-scenebar .hub-scene {background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.85);border-radius:999px;overflow:hidden;}
 .hub-scenebar .hub-scene>button {min-height:36px;padding:0 16px;font-size:12px;font-weight:700;color:#123750;background:transparent;border:0;border-radius:999px;}
 .hub-scenebar .hub-scene>button[title="Excluir Cena"] {width:34px;min-height:36px;padding:0;border-left:1px solid #d7e6f1;border-radius:0;color:#5b7488;}
-.hub-scenebar .hub-scene[data-active="true"] {background:#02c2cd;border-color:#02c2cd;}
-.hub-scenebar .hub-scene[data-active="true"]>button {color:#07334d;}
-.hub-scenebar .hub-scene[data-active="true"]>button[title="Excluir Cena"] {border-left-color:#07334d33;}
-.hub-scene-add {flex-shrink:0;width:36px;height:36px;display:grid;place-items:center;border-radius:999px;background:#083d65;color:#fff;border:0;}
+.hub-scenebar .hub-scene[data-active="true"] {background:var(--marca,#0369a1);border-color:var(--marca,#0369a1);}
+.hub-scenebar .hub-scene[data-active="true"]>button {color:#fff;}
+.hub-scenebar .hub-scene[data-active="true"]>button[title="Excluir Cena"] {border-left-color:#ffffff59;}
+.hub-scene-add {flex-shrink:0;width:36px;height:36px;display:grid;place-items:center;border-radius:999px;background:var(--marca,#0369a1);color:#fff;border:0;}
 .hub-scenebar button:focus-visible {outline:3px solid #072e4e;outline-offset:2px;}
 @media(max-width:767px){
  .hub-scenebar {padding:8px 12px;}

@@ -8,10 +8,28 @@ import {
   Image as ImageIcon, Type, CloudSun, Film, Rss, Globe, Gift, Layers, Maximize2,
   Tv, Megaphone, Smartphone, GripVertical, StickyNote, ListTodo, Timer,
   ClipboardList, Utensils, TrendingUp, Camera, FileText, BookOpen, Code2,
-  Database, Upload, Info, CheckCircle2, MonitorPlay, Move
+  Database, Upload, Info, CheckCircle2, MonitorPlay, Move, CalendarClock, Power, Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getBroadcasts, saveBroadcast, deleteBroadcast, getDisplays, getCurrentUser, saveDisplay, getDevices } from '../services/storage';
+import { getBillingSnapshot, hasFeature } from '../services/billing';
+import { getApiErrorMessage } from '../libs/api';
+import { NovaPublicacao, type OndePublicar, type ResultadoNovaPublicacao } from './scheduler/NovaPublicacao';
+import { layoutDoModelo } from './scheduler/modelosDeAviso';
+import {
+  dividirPorOrientacao, estadoDaPublicacao, descreverAlvo, descreverJanela, paraDataHoraLocal,
+  ROTULO_DO_ESTADO, validarJanela, type Orientacao,
+} from './scheduler/regrasDePublicacao';
+
+/** Feature do plano que libera "Em data e hora marcadas" (Loja para cima). Mesma chave do gate da API. */
+const FEATURE_AGENDAMENTO = 'agendamento-avancado';
+
+/** Segunda publicação pendente quando a escolha mistura telas deitadas e em pé. */
+interface PublicacaoNaFila {
+  orientation: Orientacao;
+  displayIds: string[];
+  modeloId: string | null;
+}
 import { Broadcast, Display, Page, User, WidgetType, LayoutItem, Device } from '../types';
 import SceneEditor from './SceneEditor';
 import { MediaLibrary } from './MediaLibrary';
@@ -96,8 +114,15 @@ const Scheduler: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentBroadcast, setCurrentBroadcast] = useState<Partial<Broadcast> | null>(null);
   const [showLeftSidebar, setShowLeftSidebar] = useState(false);
-  const [showOrientationModal, setShowOrientationModal] = useState(false);
+  // Assistente "Nova publicação" (Modelo, Onde, Quando).
+  const [assistenteAberto, setAssistenteAberto] = useState(false);
+  const [ondeInicial, setOndeInicial] = useState<OndePublicar>('todas');
   const [pendingAllScreens, setPendingAllScreens] = useState(false);
+  const [filaDePublicacao, setFilaDePublicacao] = useState<PublicacaoNaFila | null>(null);
+  // null = plano ainda não carregou ou conta sem assinatura: não bloqueia, a API decide.
+  const [planFeatures, setPlanFeatures] = useState<string[] | null>(null);
+  const [busca, setBusca] = useState('');
+  const [tirandoDoAr, setTirandoDoAr] = useState<string | null>(null);
   const [selectedWidget, setSelectedWidget] = useState<string | null>(null);
   const [showLayersModal, setShowLayersModal] = useState(false);
   const [showAllScreensModal, setShowAllScreensModal] = useState(false);
@@ -134,46 +159,103 @@ const Scheduler: React.FC = () => {
     fetchData();
   }, []);
 
+  // Plano da conta, para saber se "Em data e hora marcadas" está liberado (feature
+  // `agendamento-avancado`). Fail-open igual ao resto do painel: sem dado, quem decide é a API.
+  useEffect(() => {
+    let alive = true;
+    getBillingSnapshot().then(snapshot => {
+      if (alive) setPlanFeatures(snapshot?.subscription?.plan?.features ?? null);
+    }).catch(() => undefined);
+    return () => { alive = false; };
+  }, []);
+
+  const podeAgendar = hasFeature(planFeatures, FEATURE_AGENDAMENTO);
+
   const handleCreateNew = () => {
     setPendingAllScreens(false);
-    setShowOrientationModal(true);
+    setOndeInicial('escolher');
+    setAssistenteAberto(true);
   };
 
   const handleCreateAllScreens = () => {
     setPendingAllScreens(true);
-    setShowOrientationModal(true);
+    setOndeInicial('todas');
+    setAssistenteAberto(true);
   };
 
-  const confirmOrientation = (orientation: 'horizontal' | 'vertical') => {
-    const now = new Date();
-    const offset = now.getTimezoneOffset() * 60000;
-    const localISOTime = new Date(now.getTime() - offset).toISOString().slice(0, 16);
-    
+  /**
+   * Abre o editor com uma publicação nova já montada: orientação das telas, modelo aplicado
+   * e horário escolhido no assistente. Quem grava é o "Publicar" do editor (handleSave).
+   */
+  const confirmOrientation = (
+    orientation: Orientacao,
+    opcoes: {
+      nome: string;
+      displayIds: string[];
+      modeloId: string | null;
+      janela: Pick<Broadcast, 'start_time' | 'end_time' | 'is_permanent'>;
+    },
+  ) => {
     const newBroadcast: Partial<Broadcast> = {
       id: crypto.randomUUID(),
-      name: pendingAllScreens ? '' : '',
+      name: opcoes.nome,
       active: true,
-      display_ids: pendingAllScreens ? displays.map(d => d.id) : [],
-      start_time: localISOTime,
-      end_time: new Date(Date.now() + 3600000 * 24 - offset).toISOString().slice(0, 16),
-      is_permanent: false,
+      display_ids: opcoes.displayIds,
+      start_time: opcoes.janela.start_time,
+      end_time: opcoes.janela.end_time,
+      is_permanent: opcoes.janela.is_permanent,
       orientation,
       page: {
         id: 'p' + Date.now(),
         order: 1,
         duration: 15,
-        layout: []
+        layout: layoutDoModelo(opcoes.modeloId, orientation)
       },
       created_at: Date.now(),
       created_by: currentUser?.id
     };
     setCurrentBroadcast(newBroadcast);
-    setShowOrientationModal(false);
-    setPendingAllScreens(false);
+    setSelectedWidget(null);
     setIsEditing(true);
   };
 
+  const comOrientacao = (nome: string, orientation: Orientacao) =>
+    `${nome} (${orientation === 'vertical' ? 'em pé' : 'deitada'})`;
+
+  const handleConfirmarAssistente = (resultado: ResultadoNovaPublicacao) => {
+    const grupos = dividirPorOrientacao(displays.filter(d => resultado.displayIds.includes(d.id)));
+    if (grupos.length === 0) return;
+    // "Agora, até eu tirar" = permanente: passa pelo gate da API em todos os planos.
+    const janela = resultado.quando.tipo === 'janela'
+      ? { start_time: resultado.quando.inicio, end_time: resultado.quando.fim, is_permanent: false }
+      : { start_time: paraDataHoraLocal(Date.now()), end_time: '', is_permanent: true };
+    const misturado = grupos.length > 1;
+    const [primeiro, segundo] = grupos;
+    setAssistenteAberto(false);
+    setFilaDePublicacao(segundo ? { orientation: segundo.orientation, displayIds: segundo.displayIds, modeloId: resultado.modeloId } : null);
+    confirmOrientation(primeiro.orientation, {
+      nome: misturado ? comOrientacao(resultado.nome, primeiro.orientation) : resultado.nome,
+      displayIds: primeiro.displayIds,
+      modeloId: resultado.modeloId,
+      janela,
+    });
+    if (misturado) {
+      toast.info('Primeiro a versão para telas deitadas (16:9). Depois de publicar, abrimos a versão em pé (9:16).');
+    }
+  };
+
+  /** Fecha o editor sem gravar. Descarta também a segunda publicação pendente, se houver. */
+  const fecharEditor = () => {
+    setIsEditing(false);
+    setCurrentBroadcast(null);
+    setPendingAllScreens(false);
+    setFilaDePublicacao(null);
+  };
+
   const handleEdit = (broadcast: Broadcast) => {
+    setFilaDePublicacao(null);
+    setPendingAllScreens(false);
+    setSelectedWidget(null);
     setCurrentBroadcast({ ...broadcast });
     setIsEditing(true);
   };
@@ -211,32 +293,17 @@ const Scheduler: React.FC = () => {
       setBroadcastToDelete(null);
     } catch (error) {
       console.error(error);
-      toast.error('Erro ao excluir programação.');
+      toast.error('Erro ao excluir a publicação.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async () => {
-    if (!currentBroadcast?.name || !currentBroadcast?.start_time) {
-      toast.error('Por favor, preencha todos os campos obrigatórios.');
-      return;
-    }
-
-    if (!currentBroadcast.is_permanent && !currentBroadcast.end_time) {
-      toast.error('Por favor, defina um horário de término ou marque como permanente.');
-      return;
-    }
-
-    if (currentBroadcast.display_ids?.length === 0) {
-      toast.error('Selecione pelo menos uma tela para exibição.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const broadcastToSave = currentBroadcast as Broadcast;
-      
+  /**
+   * Grava a publicação e acerta a página dela em cada tela: entra nas telas escolhidas
+   * (se ativa) e sai das outras. Usado pelo "Publicar" do editor e pelo "Tirar do ar".
+   */
+  const persistirPublicacao = async (broadcastToSave: Broadcast) => {
       // 1. Save the broadcast record
       await saveBroadcast(broadcastToSave);
       
@@ -279,18 +346,93 @@ const Scheduler: React.FC = () => {
 
       const updated = await getBroadcasts();
       setBroadcasts(updated);
-      
+
       // Update local displays state
       const updatedDisplays = await getDisplays();
       setDisplays(updatedDisplays);
-      
+  };
+
+  const handleSave = async () => {
+    if (!currentBroadcast) return;
+    if (!currentBroadcast.name?.trim()) {
+      toast.error('Dê um nome para a publicação.');
+      return;
+    }
+
+    if (currentBroadcast.display_ids?.length === 0) {
+      toast.error('Escolha pelo menos uma tela.');
+      return;
+    }
+
+    if (!currentBroadcast.is_permanent) {
+      const erroJanela = validarJanela(currentBroadcast.start_time ?? '', currentBroadcast.end_time ?? '');
+      if (erroJanela) {
+        toast.error(erroJanela);
+        return;
+      }
+    }
+
+    // "Agora, até eu tirar": o início nunca fica no futuro (senão a lista mostraria "Agendada"
+    // enquanto a TV já exibe, porque o player ignora o início de publicação permanente).
+    const inicioAtual = Date.parse(currentBroadcast.start_time ?? '');
+    const inicio = currentBroadcast.is_permanent && (Number.isNaN(inicioAtual) || inicioAtual > Date.now())
+      ? paraDataHoraLocal(Date.now())
+      : currentBroadcast.start_time;
+    const broadcastToSave = {
+      ...currentBroadcast,
+      name: currentBroadcast.name.trim(),
+      start_time: inicio,
+      end_time: currentBroadcast.is_permanent ? '' : currentBroadcast.end_time,
+    } as Broadcast;
+
+    setLoading(true);
+    try {
+      await persistirPublicacao(broadcastToSave);
+      toast.success(broadcastToSave.is_permanent ? 'Publicação no ar.' : 'Publicação agendada.');
+
+      // Seleção mista: abre a versão para as telas da outra orientação, com o mesmo horário.
+      if (filaDePublicacao) {
+        const proxima = filaDePublicacao;
+        setFilaDePublicacao(null);
+        const nomeBase = broadcastToSave.name.replace(/ \((deitada|em pé)\)$/, '');
+        confirmOrientation(proxima.orientation, {
+          nome: comOrientacao(nomeBase, proxima.orientation),
+          displayIds: proxima.displayIds,
+          modeloId: proxima.modeloId,
+          janela: {
+            start_time: broadcastToSave.start_time,
+            end_time: broadcastToSave.end_time,
+            is_permanent: broadcastToSave.is_permanent,
+          },
+        });
+        toast.info(proxima.orientation === 'vertical'
+          ? 'Agora a versão para as telas em pé (9:16).'
+          : 'Agora a versão para as telas deitadas (16:9).');
+        return;
+      }
+
       setIsEditing(false);
       setCurrentBroadcast(null);
+      setPendingAllScreens(false);
     } catch (error) {
       console.error(error);
-      toast.error('Erro ao salvar programação.');
+      toast.error(getApiErrorMessage(error, 'Não foi possível publicar.'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  /** "Tirar do ar": mantém a publicação na lista (Encerrada) e tira a página das telas. */
+  const tirarDoAr = async (broadcast: Broadcast) => {
+    setTirandoDoAr(broadcast.id);
+    try {
+      await persistirPublicacao({ ...broadcast, active: false });
+      toast.success('Publicação tirada do ar.');
+    } catch (error) {
+      console.error(error);
+      toast.error(getApiErrorMessage(error, 'Não foi possível tirar a publicação do ar.'));
+    } finally {
+      setTirandoDoAr(null);
     }
   };
 
@@ -564,7 +706,7 @@ const Scheduler: React.FC = () => {
     return (
       <div className="h-tela w-screen bg-papel-2 flex flex-col items-center justify-center gap-4">
         <Loader2 className="animate-spin text-marca" size={32} />
-        <p className="text-xs uppercase tracking-widest font-bold text-tinta-3">Carregando Central...</p>
+        <p className="text-sm font-bold text-tinta-3">Carregando publicações...</p>
       </div>
     );
   }
@@ -577,7 +719,7 @@ const Scheduler: React.FC = () => {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12 gap-4 md:gap-0">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => isEditing ? setIsEditing(false) : navigate('/')}
+              onClick={() => isEditing ? fecharEditor() : navigate('/')}
               className="p-2 bg-papel border border-borda rounded-xl text-tinta-3 hover:text-tinta transition-all"
               title={isEditing ? 'Voltar para a lista' : 'Ir para o início'}
             >
@@ -585,10 +727,10 @@ const Scheduler: React.FC = () => {
             </button>
             <div>
               <h1 className="text-2xl md:text-3xl font-black tracking-tight flex items-center gap-2 md:gap-3">
-                <CalendarIcon className="text-marca shrink-0 w-6 h-6 md:w-8 md:h-8" />
-                <span>Central de <span className="text-marca">Programação</span></span>
+                <CalendarClock className="text-marca shrink-0 w-6 h-6 md:w-8 md:h-8" />
+                <span>Agendar <span className="text-marca">publicação</span></span>
               </h1>
-              <p className="text-tinta-3 text-xs md:text-sm font-medium">Escolha o que cada tela mostra e em que horário</p>
+              <p className="text-tinta-3 text-base md:text-sm font-medium">Coloque um aviso nas suas telas agora ou no dia e hora que você quiser.</p>
             </div>
           </div>
           
@@ -596,16 +738,17 @@ const Scheduler: React.FC = () => {
             <div className="flex gap-3 w-full md:w-auto">
               <button 
                 onClick={handleCreateAllScreens}
-                className="flex-1 md:flex-none justify-center flex items-center gap-2 bg-warn hover:bg-warn/90 text-white px-5 py-3 rounded-xl font-bold transition-all border border-borda"
-                title="Exibir em todas as telas conectadas (avisos urgentes)"
+                className="flex-1 md:flex-none justify-center flex items-center gap-2 min-h-11 bg-warn hover:bg-warn/90 text-white px-5 py-3 rounded-xl font-bold transition-all border border-borda"
+                title="Aviso em todas as telas de uma vez"
+                aria-label="Aviso em todas as telas"
               >
-                <Megaphone size={18} strokeWidth={2.5} /> <span className="hidden sm:inline">Todas as Telas</span>
+                <Megaphone size={18} strokeWidth={2.5} /> <span>Todas as telas</span>
               </button>
               <button 
                 onClick={handleCreateNew}
-                className="flex-1 md:flex-none justify-center flex items-center gap-2 bg-marca hover:bg-marca-hover text-white px-6 py-3 rounded-xl font-bold transition-all"
+                className="flex-1 md:flex-none justify-center flex items-center gap-2 min-h-11 bg-marca hover:bg-marca-hover text-white px-6 py-3 rounded-xl font-bold transition-all"
               >
-                <Plus size={20} strokeWidth={3} /> Nova Programação
+                <Plus size={20} strokeWidth={3} /> Nova publicação
               </button>
             </div>
           )}
@@ -616,7 +759,7 @@ const Scheduler: React.FC = () => {
             {/* HEADER BAR */}
             <header className="h-auto md:h-16 bg-papel border-b border-borda px-4 md:px-6 py-3 md:py-0 flex flex-col md:flex-row items-center justify-between z-30 shadow-card gap-3 md:gap-0">
               <div className="flex items-center gap-4 w-full md:w-auto justify-start">
-                <button onClick={() => setIsEditing(false)} className="p-2 hover:bg-papel-3 rounded-lg text-tinta-3 hover:text-marca transition-colors">
+                <button onClick={fecharEditor} aria-label="Voltar para a lista" className="p-2 hover:bg-papel-3 rounded-lg text-tinta-3 hover:text-marca transition-colors">
                   <ChevronLeft size={20} />
                 </button>
                 <div className="w-px h-6 bg-papel-3"></div>
@@ -624,16 +767,16 @@ const Scheduler: React.FC = () => {
                   <span className="brand-lockup" role="img" aria-label="Tellas" />
                   <h1 className="font-bold text-tinta tracking-tight uppercase text-sm">
                     <span className="text-tinta-3 mx-2">/</span> 
-                    <span className="text-marca">Programação</span>
+                    <span className="text-marca">Publicação</span>
                     <span className="text-tinta-3 mx-2">/</span> 
-                    <span className="text-tinta-2 normal-case font-medium">{currentBroadcast?.name || 'Nova Programação'}</span>
+                    <span className="text-tinta-2 normal-case font-medium">{currentBroadcast?.name || 'Nova publicação'}</span>
                   </h1>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
                 <span className="text-[10px] font-black bg-marca-fundo text-marca border border-marca/30 px-3 py-1.5 rounded-full uppercase tracking-wider hidden sm:inline-flex items-center gap-1.5">
-                  <CalendarDays size={12} /> Modo Agendamento
+                  <CalendarClock size={12} /> {currentBroadcast?.is_permanent ? 'Entra no ar ao publicar' : 'Com data e hora'}
                 </span>
 
                 <div className="flex items-center gap-2">
@@ -667,7 +810,7 @@ const Scheduler: React.FC = () => {
                   </button>
 
                   <button 
-                    onClick={() => setIsEditing(false)}
+                    onClick={fecharEditor}
                     className="bg-papel border border-borda hover:bg-papel-3 text-tinta-3 hover:text-tinta px-4 py-2 rounded-lg font-bold text-sm transition-all"
                   >
                     Cancelar
@@ -678,7 +821,7 @@ const Scheduler: React.FC = () => {
                     className="bg-marca hover:bg-marca-hover text-tinta px-6 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition-all border border-borda active:scale-95 disabled:opacity-50"
                   >
                     {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                    {loading ? 'SALVANDO...' : 'SALVAR'}
+                    {loading ? 'Publicando...' : 'Publicar'}
                   </button>
                 </div>
               </div>
@@ -1007,47 +1150,104 @@ const Scheduler: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Section 3: Configurações de Agendamento */}
+                {/* Section 3: Publicação (nome e quando) */}
                 <div className="p-3.5 border-b border-borda">
                   <h3 className="text-[10px] font-black text-marca uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <CalendarDays size={12} /> Configurações de Agendamento
+                    <CalendarClock size={12} /> Publicação
                   </h3>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-[9px] font-black text-tinta-3 uppercase mb-1.5 tracking-wider">Nome da Programação</label>
-                      <input 
-                        type="text" 
+                      <label htmlFor="nome-da-publicacao" className="block text-xs font-bold text-tinta-2 mb-1.5">Nome da publicação</label>
+                      <input
+                        id="nome-da-publicacao"
+                        type="text"
                         value={currentBroadcast?.name || ''}
                         onChange={e => setCurrentBroadcast({...currentBroadcast!, name: e.target.value})}
-                        placeholder="Ex: Avisos Importantes..."
+                        placeholder="Ex.: Promoção de sábado"
                         className="w-full bg-papel-2 border border-borda-3 rounded-lg p-2.5 text-base md:text-xs text-tinta placeholder:text-tinta-3 focus:border-marca outline-none transition-all font-medium"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[9px] font-black text-tinta-3 uppercase mb-1.5 tracking-wider">Início da Exibição</label>
-                      <div className="relative">
-                        <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 text-tinta-3" size={14} />
-                        <input 
-                          type="datetime-local" 
-                          value={currentBroadcast?.start_time || ''}
-                          onChange={e => setCurrentBroadcast({...currentBroadcast!, start_time: e.target.value})}
-                          className="w-full bg-papel-2 border border-borda-3 rounded-lg p-2.5 pl-9 text-base md:text-xs text-tinta focus:border-marca outline-none transition-all cursor-pointer"
-                        />
-                      </div>
+
+                    <div role="radiogroup" aria-label="Quando a publicação aparece" className="space-y-1.5">
+                      <span className="block text-xs font-bold text-tinta-2 mb-1.5">Quando aparece</span>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={!!currentBroadcast?.is_permanent}
+                        onClick={() => setCurrentBroadcast({ ...currentBroadcast!, is_permanent: true, end_time: '' })}
+                        className={`w-full min-h-11 flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left text-sm md:text-xs font-bold transition-all cursor-pointer ${
+                          currentBroadcast?.is_permanent ? 'bg-marca-fundo border-marca text-tinta' : 'bg-papel-2 border-borda text-tinta-3 hover:border-borda-3'
+                        }`}
+                      >
+                        <Zap size={14} className="text-marca shrink-0" /> Agora, até eu tirar
+                      </button>
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={!currentBroadcast?.is_permanent}
+                        aria-disabled={!podeAgendar && !!currentBroadcast?.is_permanent}
+                        onClick={() => {
+                          // Sem o plano, uma publicação "agora" não vira agendada (a API recusaria).
+                          if (!podeAgendar && currentBroadcast?.is_permanent) return;
+                          setCurrentBroadcast({ ...currentBroadcast!, is_permanent: false });
+                        }}
+                        className={`w-full min-h-11 flex items-center gap-2 px-2.5 py-2 rounded-lg border text-left text-sm md:text-xs font-bold transition-all ${
+                          !currentBroadcast?.is_permanent
+                            ? 'bg-marca-fundo border-marca text-tinta cursor-pointer'
+                            : !podeAgendar
+                              ? 'bg-papel-2 border-borda text-tinta-3 cursor-not-allowed'
+                              : 'bg-papel-2 border-borda text-tinta-3 hover:border-borda-3 cursor-pointer'
+                        }`}
+                      >
+                        {!podeAgendar && currentBroadcast?.is_permanent
+                          ? <Lock size={14} className="shrink-0" />
+                          : <CalendarClock size={14} className="text-marca shrink-0" />}
+                        Em data e hora marcadas
+                      </button>
+                      {!podeAgendar && currentBroadcast?.is_permanent && (
+                        <p className="text-xs text-tinta-3 leading-relaxed pt-1">
+                          Disponível no plano Loja.{' '}
+                          <button type="button" onClick={() => navigate('/assinatura')} className="font-bold text-marca hover:text-marca-hover underline cursor-pointer">
+                            Ver o plano Loja
+                          </button>
+                        </p>
+                      )}
                     </div>
-                    <div>
-                      <label className="block text-[9px] font-black text-tinta-3 uppercase mb-1.5 tracking-wider">Fim da Exibição</label>
-                      <div className="relative">
-                        <CalendarDays className={`absolute left-2.5 top-1/2 -translate-y-1/2 ${currentBroadcast?.is_permanent ? 'text-tinta' : 'text-tinta-3'}`} size={14} />
-                        <input 
-                          type="datetime-local" 
-                          disabled={currentBroadcast?.is_permanent}
-                          value={currentBroadcast?.is_permanent ? '' : (currentBroadcast?.end_time || '')}
-                          onChange={e => setCurrentBroadcast({...currentBroadcast!, end_time: e.target.value})}
-                          className={`w-full bg-papel-2 border border-borda-3 rounded-lg p-2.5 pl-9 text-base md:text-xs text-tinta focus:border-marca outline-none transition-all ${currentBroadcast?.is_permanent ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
-                        />
-                      </div>
-                    </div>
+
+                    {currentBroadcast?.is_permanent ? (
+                      <p className="text-xs text-tinta-3 leading-relaxed">
+                        Entra no ar quando você publicar e fica até você tirar do ar.
+                      </p>
+                    ) : (
+                      <>
+                        <div>
+                          <label htmlFor="inicio-da-publicacao" className="block text-xs font-bold text-tinta-2 mb-1.5">Começa em</label>
+                          <div className="relative">
+                            <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 text-tinta-3" size={14} />
+                            <input
+                              id="inicio-da-publicacao"
+                              type="datetime-local"
+                              value={currentBroadcast?.start_time || ''}
+                              onChange={e => setCurrentBroadcast({...currentBroadcast!, start_time: e.target.value})}
+                              className="w-full bg-papel-2 border border-borda-3 rounded-lg p-2.5 pl-9 text-base md:text-xs text-tinta focus:border-marca outline-none transition-all cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label htmlFor="fim-da-publicacao" className="block text-xs font-bold text-tinta-2 mb-1.5">Termina em</label>
+                          <div className="relative">
+                            <CalendarDays className="absolute left-2.5 top-1/2 -translate-y-1/2 text-tinta-3" size={14} />
+                            <input
+                              id="fim-da-publicacao"
+                              type="datetime-local"
+                              value={currentBroadcast?.end_time || ''}
+                              onChange={e => setCurrentBroadcast({...currentBroadcast!, end_time: e.target.value})}
+                              className="w-full bg-papel-2 border border-borda-3 rounded-lg p-2.5 pl-9 text-base md:text-xs text-tinta focus:border-marca outline-none transition-all cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
                     <div>
                       <label className="block text-[9px] font-black text-tinta-3 uppercase mb-1.5 tracking-wider">Duração da Exibição (Segundos)</label>
                       <div className="flex items-center gap-2 bg-papel-2 border border-borda-2 rounded-lg p-1">
@@ -1083,18 +1283,11 @@ const Scheduler: React.FC = () => {
                       </div>
                       <p className="text-[8px] text-tinta-3 mt-1.5">Define em qual posição a cena aparecerá na rotação das telas</p>
                     </div>
-                    <label className="flex items-center gap-3 cursor-pointer group pt-2 select-none">
-                      <div className={`w-9 h-5 rounded-full relative transition-all ${currentBroadcast?.is_permanent ? 'bg-marca' : 'bg-borda'}`}>
-                        <div className={`absolute top-0.5 w-4 h-4 bg-papel rounded-full transition-all ${currentBroadcast?.is_permanent ? 'left-[18px]' : 'left-0.5'}`}></div>
-                      </div>
-                      <span className="text-[10px] font-bold text-tinta-3 group-hover:text-tinta transition-colors uppercase">Permanente</span>
-                      <input type="checkbox" className="hidden" checked={currentBroadcast?.is_permanent || false} onChange={e => setCurrentBroadcast({...currentBroadcast!, is_permanent: e.target.checked})} />
-                    </label>
                     <label className="flex items-center gap-3 cursor-pointer group select-none">
                       <div className={`w-9 h-5 rounded-full relative transition-all ${currentBroadcast?.active ? 'bg-ok' : 'bg-borda'}`}>
                         <div className={`absolute top-0.5 w-4 h-4 bg-papel rounded-full transition-all ${currentBroadcast?.active ? 'left-[18px]' : 'left-0.5'}`}></div>
                       </div>
-                      <span className="text-[10px] font-bold text-tinta-3 group-hover:text-tinta transition-colors uppercase">Ativa</span>
+                      <span className="text-[10px] font-bold text-tinta-3 group-hover:text-tinta transition-colors uppercase">Ligada</span>
                       <input type="checkbox" className="hidden" checked={currentBroadcast?.active || false} onChange={e => setCurrentBroadcast({...currentBroadcast!, active: e.target.checked})} />
                     </label>
                   </div>
@@ -1142,140 +1335,167 @@ const Scheduler: React.FC = () => {
                     : 'text-tinta-3 border-borda'
                 }`}>
                   <Maximize2 size={12} className={currentBroadcast?.orientation === 'vertical' ? 'text-marca' : 'text-warn'} />
-                  {currentBroadcast?.orientation === 'vertical' ? 'Programação 9:16 (vertical)' : 'Programação 16:9 (horizontal)'}
+                  {currentBroadcast?.orientation === 'vertical' ? 'Publicação 9:16 (em pé)' : 'Publicação 16:9 (deitada)'}
                 </div>
                 {pendingAllScreens || (currentBroadcast?.display_ids?.length === displays.length && displays.length > 0) ? (
                   <div className="absolute top-4 right-4 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest bg-warn-fundo text-warn px-3 py-1.5 rounded-full border border-warn/30 backdrop-blur-sm z-20">
-                    <Megaphone size={12} /> Todas as Telas
+                    <Megaphone size={12} /> Todas as telas
                   </div>
                 ) : null}
                 
-                <SceneEditor 
-                  page={currentBroadcast?.page || { id: 'temp', order: 1, duration: 15, layout: [] }} 
-                  onChange={(newPage) => setCurrentBroadcast({...currentBroadcast!, page: newPage})}
-                  orientation={currentBroadcast?.orientation || 'horizontal'}
-                  hideToolbar={true}
-                  selectedWidget={selectedWidget}
-                  onSelectWidget={setSelectedWidget}
-                />
+                {/* A raiz do SceneEditor não declara largura; dentro deste main com justify-center ela encolhia a poucos px. */}
+                <div className="relative z-10 w-full h-full min-w-0">
+                  <SceneEditor
+                    page={currentBroadcast?.page || { id: 'temp', order: 1, duration: 15, layout: [] }}
+                    onChange={(newPage) => setCurrentBroadcast({...currentBroadcast!, page: newPage})}
+                    orientation={currentBroadcast?.orientation || 'horizontal'}
+                    hideToolbar={true}
+                    selectedWidget={selectedWidget}
+                    onSelectWidget={setSelectedWidget}
+                  />
+                </div>
               </main>
             </div>
           </div>
         ) : (
-          /* LISTA DE PROGRAMAÇÕES */
+          /* LISTA DE PUBLICAÇÕES */
           <div className="space-y-6 animate-in fade-in duration-500">
-            
-            <div className="flex flex-col md:flex-row gap-4 justify-between items-end mb-8">
-               <div className="flex gap-4">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-tinta-3" size={16} />
-                    <input type="text" placeholder="Buscar programações..." className="bg-papel border border-borda rounded-xl py-2 pl-10 pr-4 text-base md:text-sm focus:border-marca outline-none transition-all w-64" />
-                  </div>
-                  <button className="flex items-center gap-2 bg-papel border border-borda text-tinta-3 px-4 py-2 rounded-xl text-sm font-bold hover:text-tinta transition-all">
-                    <Filter size={16} /> Filtros
-                  </button>
-               </div>
-               <div className="text-xs text-tinta-3 font-medium">
-                 Total: <span className="text-tinta-2 font-bold">{broadcasts.length}</span> programações agendadas
-               </div>
+
+            <div className="flex flex-col md:flex-row gap-3 md:gap-4 justify-between md:items-end mb-6 md:mb-8">
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-tinta-3" size={16} aria-hidden />
+                <input
+                  type="search"
+                  value={busca}
+                  onChange={e => setBusca(e.target.value)}
+                  placeholder="Buscar publicações"
+                  aria-label="Buscar publicações pelo nome"
+                  className="w-full min-h-11 bg-papel border border-borda rounded-xl py-2 pl-10 pr-4 text-base md:text-sm text-tinta placeholder:text-tinta-3 focus:border-marca outline-none transition-all"
+                />
+              </div>
+              <div className="text-base md:text-sm text-tinta-3 font-medium">
+                <span className="text-tinta-2 font-bold">{broadcasts.length}</span> {broadcasts.length === 1 ? 'publicação' : 'publicações'}
+              </div>
             </div>
 
             {broadcasts.length === 0 ? (
-              <div className="py-20 text-center border-2 border-dashed border-borda rounded-3xl bg-papel-2">
-                <CalendarDays size={64} className="mx-auto text-tinta mb-6" />
-                <h3 className="text-xl font-bold text-tinta-2 mb-2">Nenhuma programação encontrada</h3>
-                <p className="text-tinta-3 mb-8 max-w-sm mx-auto">Crie a primeira programação para definir o que passa em cada tela e em que horário.</p>
-                <button 
+              <div className="py-16 md:py-20 px-4 text-center border-2 border-dashed border-borda rounded-3xl bg-papel-2">
+                <CalendarClock size={56} className="mx-auto text-marca mb-6" aria-hidden />
+                <h3 className="text-xl font-bold text-tinta mb-2">Nenhuma publicação ainda</h3>
+                <p className="text-base text-tinta-3 mb-8 max-w-sm mx-auto">
+                  Escolha um modelo de aviso, as telas e o horário. O resto você ajusta no editor antes de publicar.
+                </p>
+                <button
                   onClick={handleCreateNew}
-                  className="px-8 py-3 bg-marca hover:bg-marca-hover text-white rounded-xl font-bold transition-all shadow-card"
+                  className="inline-flex items-center gap-2 min-h-12 px-8 py-3 bg-marca hover:bg-marca-hover text-white rounded-xl font-bold transition-all shadow-card cursor-pointer"
                 >
-                  Criar Agora
+                  <Plus size={20} strokeWidth={3} /> Nova publicação
                 </button>
               </div>
-            ) : (
-              <motion.div 
+            ) : (() => {
+              const agora = Date.now();
+              const termo = busca.trim().toLocaleLowerCase('pt-BR');
+              const ordem = { 'no-ar': 0, agendada: 1, encerrada: 2 } as const;
+              const visiveis = broadcasts
+                .filter(b => !termo || (b.name || '').toLocaleLowerCase('pt-BR').includes(termo))
+                .map(b => ({ broadcast: b, estado: estadoDaPublicacao(b, agora) }))
+                .sort((a, b) => ordem[a.estado] - ordem[b.estado]);
+
+              if (visiveis.length === 0) {
+                return (
+                  <p className="py-12 text-center text-base text-tinta-3">Nenhuma publicação com esse nome.</p>
+                );
+              }
+
+              return (
+              <motion.div
                 variants={staggerGrid}
                 initial="hidden"
                 animate="show"
                 className="grid grid-cols-1 gap-4"
               >
-                {broadcasts.map(broadcast => {
-                  const now = new Date();
-                  const start = new Date(broadcast.start_time);
-                  const end = new Date(broadcast.end_time);
-                  const isLive = broadcast.active && now >= start && now <= end;
-                  const isExpired = now > end;
-                  const isScheduled = now < start;
+                {visiveis.map(({ broadcast, estado }) => {
+                  const noAr = estado === 'no-ar';
+                  const agendada = estado === 'agendada';
+                  const vertical = broadcast.orientation === 'vertical';
 
                   return (
-                    <motion.div 
-                      key={broadcast.id} 
+                    <motion.div
+                      key={broadcast.id}
                       variants={cardItem}
-                      whileHover={{ y: -4 }}
-                      transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                      className="bg-papel-2 backdrop-blur-md border border-borda rounded-2xl p-6 hover:border-marca transition-all group"
+                      className={`bg-papel-2 backdrop-blur-md border rounded-2xl p-4 md:p-6 transition-colors ${
+                        noAr ? 'border-ok/40' : 'border-borda hover:border-borda-3'
+                      }`}
                     >
-                      <div className="flex flex-col md:flex-row justify-between gap-6">
-                        
-                        <div className="flex gap-6 items-start">
-                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${
-                            isLive ? 'bg-ok-fundo border-ok/30 text-ok' : 
-                            isScheduled ? 'bg-marca-fundo border-marca/30 text-marca' : 
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+
+                        <div className="flex gap-4 md:gap-5 items-start min-w-0">
+                          <div className={`w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center shrink-0 border ${
+                            noAr ? 'bg-ok-fundo border-ok/30 text-ok' :
+                            agendada ? 'bg-marca-fundo border-marca/30 text-marca' :
                             'bg-papel-3 border-borda-2 text-tinta-3'
                           }`}>
-                            {isLive ? <Play size={28} fill="currentColor" /> : 
-                             isScheduled ? <Clock size={28} /> : 
-                             <Pause size={28} />}
+                            {noAr ? <Play size={24} fill="currentColor" aria-hidden /> :
+                             agendada ? <Clock size={24} aria-hidden /> :
+                             <Pause size={24} aria-hidden />}
                           </div>
-                          
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-3 flex-wrap">
-                              <h3 className="text-xl font-bold text-tinta group-hover:text-marca-hover transition-colors">{broadcast.name}</h3>
-                              {isLive && <span className="bg-ok text-white text-[9px] font-black px-2 py-0.5 rounded-full animate-pulse">AO VIVO</span>}
-                              {isScheduled && <span className="bg-marca-fundo text-marca border border-marca/30 text-[9px] font-black px-2 py-0.5 rounded-full">AGENDADO</span>}
-                              {isExpired && <span className="bg-papel-3 text-tinta-3 text-[9px] font-black px-2 py-0.5 rounded-full">EXPIRADO</span>}
-                              {broadcast.orientation === 'vertical' ? (
-                                <span className="bg-marca-fundo text-marca border border-marca/30 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <Smartphone size={10} /> 9:16
-                                </span>
-                              ) : (
-                                <span className="bg-marca-fundo text-marca border border-marca/30 text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <Monitor size={10} /> 16:9
-                                </span>
-                              )}
+
+                          <div className="space-y-1.5 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-lg md:text-xl font-bold text-tinta break-words">{broadcast.name}</h3>
+                              <span className={`inline-flex items-center gap-1.5 text-sm md:text-xs font-bold px-2.5 py-0.5 rounded-full border ${
+                                noAr ? 'bg-ok-fundo text-ok-tinta border-ok/30' :
+                                agendada ? 'bg-marca-fundo text-marca border-marca/30' :
+                                'bg-papel-3 text-tinta-3 border-borda-2'
+                              }`}>
+                                {noAr && <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-ok" />}
+                                {ROTULO_DO_ESTADO[estado]}
+                              </span>
                             </div>
-                            
-                            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-tinta-3">
-                              <div className="flex items-center gap-2">
-                                <CalendarIcon size={14} className="text-tinta-3" />
-                                <span>{new Date(broadcast.start_time).toLocaleDateString()} - {new Date(broadcast.end_time).toLocaleDateString()}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Clock size={14} className="text-tinta-3" />
-                                <span>{new Date(broadcast.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} até {new Date(broadcast.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Monitor size={14} className="text-tinta-3" />
-                                <span>{broadcast.display_ids.length} {broadcast.display_ids.length === 1 ? 'tela' : 'telas'}</span>
-                              </div>
+
+                            <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-base md:text-sm text-tinta-3">
+                              <span className="flex items-center gap-2">
+                                <CalendarClock size={15} aria-hidden />
+                                {descreverJanela(broadcast)}
+                              </span>
+                              <span className="flex items-center gap-2">
+                                <Monitor size={15} aria-hidden />
+                                {descreverAlvo(broadcast.display_ids.length, displays.length)}
+                              </span>
+                              <span className="flex items-center gap-2">
+                                {vertical ? <Smartphone size={15} aria-hidden /> : <Monitor size={15} aria-hidden />}
+                                {vertical ? 'Em pé (9:16)' : 'Deitada (16:9)'}
+                              </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 self-end md:self-center">
-                          <button 
+                        <div className="flex flex-wrap items-center gap-2 md:shrink-0">
+                          <button
                             onClick={() => handleEdit(broadcast)}
-                            className="p-3 bg-papel-3 hover:bg-borda text-tinta-2 rounded-xl transition-all border border-borda-2 cursor-pointer"
-                            title="Editar"
+                            className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 min-h-11 px-4 bg-papel-3 hover:bg-borda text-tinta-2 rounded-xl transition-all border border-borda-2 text-base md:text-sm font-bold cursor-pointer"
                           >
-                            <Edit3 size={18} />
+                            <Edit3 size={17} aria-hidden /> Editar
                           </button>
-                          <button 
+                          {estado !== 'encerrada' && (
+                            <button
+                              onClick={() => tirarDoAr(broadcast)}
+                              disabled={tirandoDoAr === broadcast.id}
+                              className="flex-1 md:flex-none inline-flex items-center justify-center gap-2 min-h-11 px-4 bg-papel-3 hover:bg-warn-fundo text-tinta-2 hover:text-warn-tinta rounded-xl transition-all border border-borda-2 hover:border-warn/30 text-base md:text-sm font-bold cursor-pointer disabled:opacity-60"
+                            >
+                              {tirandoDoAr === broadcast.id
+                                ? <Loader2 size={17} className="animate-spin" aria-hidden />
+                                : <Power size={17} aria-hidden />}
+                              Tirar do ar
+                            </button>
+                          )}
+                          <button
                             onClick={() => confirmDelete(broadcast.id)}
-                            className="p-3 bg-papel-3 hover:bg-danger-fundo text-tinta-2 hover:text-danger rounded-xl transition-all border border-borda-2 hover:border-danger/30 cursor-pointer"
+                            className="inline-flex items-center justify-center gap-2 min-h-11 min-w-11 px-3 bg-papel-3 hover:bg-danger-fundo text-tinta-2 hover:text-danger rounded-xl transition-all border border-borda-2 hover:border-danger/30 text-base md:text-sm font-bold cursor-pointer"
+                            aria-label={`Excluir ${broadcast.name}`}
                             title="Excluir"
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={17} aria-hidden />
                           </button>
                         </div>
 
@@ -1284,72 +1504,28 @@ const Scheduler: React.FC = () => {
                   );
                 })}
               </motion.div>
-            )}
+              );
+            })()}
           </div>
         )}
 
       </div>
 
-      {/* ORIENTATION SELECTION MODAL */}
-      <Dialog open={showOrientationModal} onOpenChange={(open) => {
-        if (!open) {
-          setShowOrientationModal(false);
-          setPendingAllScreens(false);
-        }
-      }}>
-        <DialogContent className="max-w-md bg-papel border-borda text-tinta p-6 overflow-hidden shadow-modal">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-tinta flex items-center gap-2">
-              {pendingAllScreens ? (
-                <><Megaphone className="text-warn" size={20} /> Aviso em Todas as Telas</>
-              ) : (
-                <><Tv className="text-marca" size={20} /> Modelo de Tela</>
-              )}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-tinta-3 mt-1">
-              {pendingAllScreens 
-                ? 'Escolha a orientação do conteúdo que será exibido em todas as telas.' 
-                : 'Escolha a orientação da tela para esta programação.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 mt-2">
-            <button
-              onClick={() => confirmOrientation('horizontal')}
-              className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-borda bg-papel-2 hover:border-marca hover:bg-marca-fundo transition-all group cursor-pointer"
-            >
-              <div className="w-20 h-[45px] rounded-lg border-2 border-borda group-hover:border-marca/60 bg-papel-3 group-hover:bg-marca-fundo flex items-center justify-center transition-all">
-                <Monitor size={20} className="text-tinta-3 group-hover:text-marca transition-colors" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-bold text-tinta-2 group-hover:text-marca transition-colors">Horizontal</p>
-                <p className="text-[10px] text-tinta-3 font-mono mt-0.5">16:9 (TV ou monitor)</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => confirmOrientation('vertical')}
-              className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl border-2 border-borda bg-papel-2 hover:border-marca hover:bg-marca-fundo transition-all group cursor-pointer"
-            >
-              <div className="w-[45px] h-20 rounded-lg border-2 border-borda group-hover:border-marca bg-papel-3 group-hover:bg-marca-fundo flex items-center justify-center transition-all">
-                <Smartphone size={20} className="text-tinta-3 group-hover:text-marca-hover transition-colors" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-bold text-tinta-2 group-hover:text-marca-hover transition-colors">Vertical</p>
-                <p className="text-[10px] text-tinta-3 font-mono mt-0.5">9:16 (totem)</p>
-              </div>
-            </button>
-          </div>
-
-          {pendingAllScreens && (
-            <div className="mt-2 bg-warn-fundo border border-warn/30 rounded-xl p-3 flex items-start gap-2">
-              <AlertCircle size={14} className="text-warn mt-0.5 shrink-0" />
-              <p className="text-[11px] text-warn leading-relaxed">
-                O conteúdo será exibido em <strong>todas as {displays.length} telas</strong> conectadas. Use para avisos urgentes.
-              </p>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Assistente "Nova publicação": Modelo, Onde, Quando */}
+      <NovaPublicacao
+        open={assistenteAberto}
+        onOpenChange={(open) => {
+          setAssistenteAberto(open);
+          if (!open) setPendingAllScreens(false);
+        }}
+        displays={displays}
+        devices={devices}
+        podeAgendar={podeAgendar}
+        ondeInicial={ondeInicial}
+        onConfirmar={handleConfirmarAssistente}
+        onVerPlanos={() => navigate('/assinatura')}
+        onConectarTv={() => navigate('/conecte-sua-tv')}
+      />
 
       {/* Delete Modal */}
       <Dialog open={showDeleteModal} onOpenChange={(open) => {
@@ -1362,10 +1538,10 @@ const Scheduler: React.FC = () => {
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-tinta flex items-center gap-2">
               <AlertCircle className="text-danger" />
-              Excluir Programação
+              Excluir publicação
             </DialogTitle>
             <DialogDescription className="text-tinta-3 mt-2">
-              Tem certeza que deseja excluir esta programação? Ela será removida de todas as telas selecionadas. Esta ação não pode ser desfeita.
+              A publicação sai de todas as telas e da lista, e não dá para desfazer. Se quiser só parar de mostrar, use "Tirar do ar".
             </DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 mt-4">
@@ -1399,7 +1575,7 @@ const Scheduler: React.FC = () => {
               <span>Status e Monitoramento de Telas ({displays.length})</span>
             </DialogTitle>
             <DialogDescription className="text-xs text-tinta-3 mt-1">
-              Veja quais telas estão conectadas agora e as programações ativas em cada uma.
+              Veja quais telas estão conectadas agora e as publicações ativas em cada uma.
             </DialogDescription>
           </DialogHeader>
           
@@ -1442,7 +1618,7 @@ const Scheduler: React.FC = () => {
                       </span>
                     </div>
                     <div>
-                      <span className="text-tinta-3 block uppercase text-[8px] font-black tracking-wider">Programações ativas</span>
+                      <span className="text-tinta-3 block uppercase text-[8px] font-black tracking-wider">Publicações ativas</span>
                       <span className="font-bold text-tinta-2 mt-0.5 block">{display.pages.filter(p => p.broadcast_id).length} cenas</span>
                     </div>
                   </div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, FileImage, Users as UsersIcon, Settings, BarChart3, Tv, CreditCard } from 'lucide-react';
+import { CalendarClock, FileImage, Users as UsersIcon, Settings, BarChart3, Tv, CreditCard } from 'lucide-react';
 import { User } from '../../types';
 import { Button } from '../ui/button';
 
@@ -39,13 +39,13 @@ export const ModuleNav: React.FC<ModuleNavProps> = ({
     >
 
       <Button
-        aria-label="Central de Programação"
+        aria-label="Agendar publicação"
         variant="ghost"
         onClick={() => navigate('/scheduler')}
         className={getNavItemClass(isRouteActive('#/scheduler') || currentHash === '#/')}
       >
-        <Calendar size={14} className={isRouteActive('#/scheduler') || currentHash === '#/' ? 'text-marca' : ''} />
-        <span className="hidden min-[681px]:inline">Central de Programação</span>
+        <CalendarClock size={14} className={isRouteActive('#/scheduler') || currentHash === '#/' ? 'text-marca' : ''} />
+        <span className="hidden min-[681px]:inline">Agendar publicação</span>
       </Button>
 
       <Button

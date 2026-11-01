@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import {
   AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd,
   ArrowDown, ArrowUp, ArrowUpDown, Blend, Bold, BringToFront, Clapperboard, Copy, Frame, Italic, Layers, Lock, LockOpen,
-  MoreHorizontal, MousePointer2, Pencil, Replace, SendToBack, SlidersHorizontal, Sparkles, Trash2, Underline, Volume2, VolumeX, X,
+  MousePointer2, Pencil, Replace, SendToBack, Settings, SlidersHorizontal, Sparkles, Trash2, Underline, Volume2, VolumeX, X,
 } from 'lucide-react';
 import { LayoutItem, WidgetData, WidgetType } from '../../types';
 import { TEXT_STYLE_PRESETS } from './widgetStyles';
@@ -278,7 +278,7 @@ export const QuickToolbar: React.FC<QuickToolbarProps> = ({ currentWidget, updat
       <button type="button" className="hub-quick-icon" title={data.locked ? 'Destravar elemento' : 'Travar elemento'} aria-label={data.locked ? 'Destravar elemento' : 'Travar elemento'} aria-pressed={!!data.locked} onClick={() => patch({ locked: !data.locked })}>{data.locked ? <Lock size={16} /> : <LockOpen size={16} />}</button>
       <button type="button" className="hub-quick-icon" title="Duplicar elemento" aria-label="Duplicar elemento" onClick={onDuplicate}><Copy size={16} /></button>
       <button type="button" className="hub-quick-icon hub-quick-remove" title="Excluir elemento" aria-label="Excluir elemento" onClick={onRemove}><Trash2 size={16} /></button>
-      <button type="button" className="hub-quick-more" title="Todas as opções" aria-label="Todas as opções" aria-expanded={moreOpen} aria-controls="widget-advanced-options" onClick={onMore}><MoreHorizontal size={20} /><span>Mais</span></button>
+      <button type="button" className="hub-quick-more" title="Configurações do elemento" aria-label="Configurações do elemento" aria-expanded={moreOpen} aria-controls="widget-advanced-options" onClick={onMore}><Settings size={20} aria-hidden="true" /><span>Configurações</span></button>
     </div>
     {contentEditable && editingContent && <div id="quick-content-editor" className="hub-quick-content" onKeyDown={event => { event.stopPropagation(); if (event.key === 'Escape') setEditingContent(false); }}>
       <div><label htmlFor="quick-content-value">{isText ? 'Texto na TV' : 'Conteúdo da nota'}</label><button type="button" aria-label="Fechar edição de texto" onClick={() => setEditingContent(false)}><X size={16} /></button></div>

@@ -17,6 +17,8 @@ import {
   PowerBIWidget, EmbedHtmlWidget, AirtableWidget, PdfDocumentWidget
 } from './widgets';
 import { getAlignmentClasses } from './Player';
+import { renderDesignWidget } from './editor/designWidgets';
+import { getTextStyle } from './editor/widgetStyles';
 import { SizeInput } from './SizeInput';
 import { MediaLibrary } from './MediaLibrary';
 
@@ -411,6 +413,7 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
               ref={containerRef}
               data-canvas-ref
               style={{
+                containerType: 'size',
                 ...(orientation === 'vertical'
                   ? {
                     width: 1080,
@@ -443,6 +446,9 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
                 cols={GRID_COLS}
                 rowHeight={rowHeight}
                 margin={[0, 0]}
+                compactType={null}
+                preventCollision={false}
+                allowOverlap={true}
                 onLayoutChange={handleLayoutChange}
                 draggableHandle=".drag-handle"
                 resizeHandle={<div className="absolute bottom-0 right-0 p-1 cursor-se-resize text-marca opacity-0 group-hover:opacity-100 transition-opacity"><MoveHorizontal size={12} /></div>}
@@ -451,7 +457,8 @@ const SceneEditor: React.FC<SceneEditorProps> = ({
                 {page.layout.map(w => (
                   <div
                     key={w.i}
-                    className={`group relative border transition-all ${selectedWidget === w.i ? 'border-marca ring-2 ring-marca/30 z-20' : 'border-transparent hover:border-marca/50'}`}
+                    className={`group relative border transition-all ${selectedWidget === w.i ? 'border-marca ring-2 ring-marca/30' : 'border-transparent hover:border-marca/50'}`}
+                    style={{ zIndex: w.data.fullScreenMode ? 99999 : (w.data.zIndex ?? 10) }}
                     onClick={(e) => { e.stopPropagation(); setSelectedWidget(w.i); }}
                   >
                     <div className="drag-handle absolute top-0 left-0 w-full h-4 bg-papel/90 opacity-0 group-hover:opacity-100 cursor-move flex items-center justify-center z-10 transition-opacity">
@@ -574,6 +581,10 @@ const WidgetTool: React.FC<{ icon: React.ReactNode | string, label: string, desc
 
 const renderWidgetPreview = (w: LayoutItem) => {
   switch (w.type) {
+    case WidgetType.ICON:
+    case WidgetType.SHAPE:
+    case WidgetType.MOTION:
+      return renderDesignWidget(w, 'editor');
     case WidgetType.TEXT:
       return (
         <div
@@ -585,10 +596,9 @@ const renderWidgetPreview = (w: LayoutItem) => {
           }}
         >
           <p
-            className="font-bold pointer-events-none select-none break-words overflow-hidden leading-tight drop-shadow-lg"
+            className="pointer-events-none select-none break-words overflow-hidden leading-tight drop-shadow-lg"
             style={{
-              color: w.data.color,
-              fontSize: w.data.textConfig?.fontSize || w.data.fontSize || 'inherit',
+              ...getTextStyle(w.data),
               textAlign: w.data.textConfig?.textAlign || 'center',
               width: '100%'
             }}

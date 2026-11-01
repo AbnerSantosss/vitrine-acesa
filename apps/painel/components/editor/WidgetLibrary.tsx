@@ -2,6 +2,7 @@ import type { EditorLeftPanel, LayoutItem as LibraryLayoutItem, WidgetData as Li
 import type { SceneTemplate } from './presets/sceneTemplates';
 import type { AiPresetResult } from '../../services/ai';
 import React, { useMemo, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import {
   Layers, Trash2, ImageIcon, Film, Type, Sparkles, Globe, Clock, CloudSun,
   LayoutDashboard, Rss, CalendarDays, StickyNote, ListTodo, Timer, ClipboardList,
@@ -193,6 +194,7 @@ export const WidgetLibrary: React.FC<WidgetLibraryProps> = ({
   planFeatures,
   requiredPlanName = 'Rede',
 }) => {
+  const reduceMotion = useReducedMotion();
   const [category, setCategory] = useState<WidgetType | null>(null);
   const [internalPanel, setInternalPanel] = useState<EditorLeftPanel>('widgets');
   const [toolQuery, setToolQuery] = useState('');
@@ -285,7 +287,7 @@ export const WidgetLibrary: React.FC<WidgetLibraryProps> = ({
          <div className="mb-3"><SearchBox value={toolQuery} onChange={setToolQuery} placeholder="Buscar elemento: relógio, vídeo, PDF" /></div>
 
          {widget && (
-           <div className="mb-3 p-2.5 bg-marca-fundo border border-borda rounded-lg">
+           <div className="hub-left__selected mb-3 p-2.5 rounded-lg">
              <p className="text-[10px] font-black text-marca uppercase tracking-wider mb-1.5">Elemento selecionado</p>
              <div className="flex flex-wrap gap-1.5">
                {widget.type === WidgetType.TEXT && (
@@ -539,7 +541,7 @@ export const WidgetLibrary: React.FC<WidgetLibraryProps> = ({
            <div>
              <p className="text-[10px] font-bold text-marca mb-0.5">Cena Programada</p>
              <p className="text-[9px] text-marca leading-relaxed">
-               Esta cena veio da Central de Programação. O que você mudar aqui vale só para esta tela.
+               Esta cena veio de Agendar publicação. O que você mudar aqui vale só para esta tela.
              </p>
            </div>
          </div>
@@ -612,19 +614,31 @@ export const WidgetLibrary: React.FC<WidgetLibraryProps> = ({
   return (
     <aside className={`hub-widget-library hub-left shrink-0 absolute md:relative left-0 top-0 h-full bg-papel border-r border-borda z-[60] shadow-flutuante transition-transform duration-300 ease-in-out ${showLeftSidebar ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
       <nav className="hub-left__rail" aria-label="Ferramentas do editor">
-        {RAIL.map(item => (
-          <button
-            key={item.id}
-            type="button"
-            className="hub-left__rail-btn"
-            aria-pressed={railActive === item.id}
-            aria-label={item.label}
-            onClick={() => onRail(item.id)}
-          >
-            {item.icon}
-            <span>{item.label}</span>
-          </button>
-        ))}
+        {RAIL.map(item => {
+          const active = railActive === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className="hub-left__rail-btn"
+              aria-pressed={active}
+              aria-label={item.label}
+              onClick={() => onRail(item.id)}
+            >
+              <span className="hub-left__rail-ico" aria-hidden="true">
+                {active && (
+                  <motion.span
+                    layoutId="rail-ativo"
+                    className="hub-left__rail-pill"
+                    transition={reduceMotion ? { duration: 0 } : { type: 'spring', stiffness: 500, damping: 38 }}
+                  />
+                )}
+                <span className="hub-left__rail-svg">{item.icon}</span>
+              </span>
+              <span className="hub-left__rail-label">{item.label}</span>
+            </button>
+          );
+        })}
       </nav>
       <div className="hub-left__panel">{body}</div>
     </aside>

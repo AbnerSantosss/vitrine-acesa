@@ -60,7 +60,7 @@ interface TxtOpts {
 }
 
 /** Texto centralizado na vertical dentro da caixa, sem margem interna. */
-const txt = (x: number, y: number, w: number, h: number, content: string, o: TxtOpts): Item => ({
+export const txt = (x: number, y: number, w: number, h: number, content: string, o: TxtOpts): Item => ({
   x, y, w, h, type: WidgetType.TEXT,
   data: {
     content, color: o.c, fontSize: '', padding: '0', fillContainer: false, contentAlignment: 'center', fitContainerMode: 'none',
@@ -72,13 +72,13 @@ const txt = (x: number, y: number, w: number, h: number, content: string, o: Txt
   },
 });
 
-const shape = (x: number, y: number, w: number, h: number, kind: NonNullable<WidgetData['shapeConfig']>['kind'], fill: string,
+export const shape = (x: number, y: number, w: number, h: number, kind: NonNullable<WidgetData['shapeConfig']>['kind'], fill: string,
   o: { stroke?: string; sw?: number; rot?: number; opacity?: number } = {}): Item => ({
   x, y, w, h, type: WidgetType.SHAPE,
   data: { ...STRETCH, shapeConfig: { kind, fill, stroke: o.stroke, strokeWidth: o.sw }, rotation: o.rot, opacity: o.opacity },
 });
 
-const icon = (x: number, y: number, w: number, h: number, name: string, color: string,
+export const icon = (x: number, y: number, w: number, h: number, name: string, color: string,
   o: { filled?: boolean; container?: NonNullable<WidgetData['effects']>['container']; rot?: number } = {}): Item => ({
   x, y, w, h, type: WidgetType.ICON,
   data: { ...STRETCH, iconConfig: { name, color, strokeWidth: 2, variant: o.filled ? 'filled' : 'stroke' }, effects: o.container ? { container: o.container } : undefined, rotation: o.rot },
@@ -95,7 +95,7 @@ const img = (x: number, y: number, w: number, h: number, photoId: string,
   },
 });
 
-const motion = (x: number, y: number, w: number, h: number, presetId: string,
+export const motion = (x: number, y: number, w: number, h: number, presetId: string,
   fields: Record<string, string> = {}, colors: Record<string, string> = {}): Item => {
   const d = getMotionDefaults(presetId);
   return { x, y, w, h, type: WidgetType.MOTION, data: { ...STRETCH, motionConfig: { presetId, fields: { ...d.fields, ...fields }, colors: { ...d.colors, ...colors }, speed: 1 } } };

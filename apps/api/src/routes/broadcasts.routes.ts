@@ -52,7 +52,7 @@ router.post('/', authMiddleware, requireTenant, validateBody(saveBroadcastSchema
 
     const displayIds: string[] = Array.isArray(display_ids) ? display_ids : [];
 
-    // ── Gate de `agendamento-avancado` (plano Rede para cima) ────────────────
+    // ── Gate de `agendamento-avancado` (plano Loja para cima) ────────────────
     //
     // O gate é CONDICIONAL e mora aqui dentro, não como middleware na rota,
     // porque simples e avançado compartilham o mesmo endpoint: o que distingue

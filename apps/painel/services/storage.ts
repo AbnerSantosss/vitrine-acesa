@@ -359,8 +359,12 @@ export const getBroadcasts = async (): Promise<Broadcast[]> => {
 
 export const saveBroadcast = async (broadcast: Broadcast): Promise<void> => {
   // Backend faz upsert via POST
+  // O schema da API (saveBroadcastSchema) aceita created_at como string ou Date; o painel
+  // guarda um número (Date.now()) e, enviado assim, o POST voltava 400 "Payload inválido".
+  const createdAt = broadcast.created_at;
   await api.post('/broadcasts', {
     ...broadcast,
+    created_at: typeof createdAt === 'number' ? new Date(createdAt).toISOString() : createdAt,
     orientation: broadcast.orientation || 'horizontal',
   });
 };

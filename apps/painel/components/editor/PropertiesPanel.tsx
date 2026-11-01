@@ -9,6 +9,7 @@ import {
 import { SizeInput } from '../SizeInput';
 import { Display, Page, WidgetType, LayoutItem } from '../../types';
 import { ImageStyleFields, TextStyleFields, IconStyleFields, ShapeStyleFields, MotionStyleFields } from './panels/StyleFields';
+import { tituloDasConfiguracoes } from './nomesDosElementos';
 import './QuickToolbar.css';
 
 interface PropertiesPanelProps {
@@ -98,18 +99,18 @@ export const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   }
 
   return (
-    <aside id="widget-advanced-options" className="hub-properties-dock" aria-label="Todas as opções do elemento">
+    <aside id="widget-advanced-options" className="hub-properties-dock" aria-label={tituloDasConfiguracoes(currentWidget?.type)}>
       {currentWidget ? (
         <div className="space-y-6 animate-in slide-in-from-right-4 duration-200">
           <div className="hub-properties-heading">
-            <h3 className="font-bold text-tinta flex items-center gap-2 text-xs uppercase tracking-wider">
-               <Settings size={16} className="text-marca" /> Todas as opções
+            <h3>
+               <Settings size={20} aria-hidden="true" /> {tituloDasConfiguracoes(currentWidget.type)}
             </h3>
             <div className="flex items-center gap-2">
               <button type="button" onClick={() => removeWidget(currentWidget.i)} className="text-danger hover:bg-danger-fundo p-2 rounded-lg transition-colors" title="Excluir elemento" aria-label="Excluir elemento">
                 <Trash2 size={16} />
               </button>
-              <button type="button" onClick={() => setShowRightSidebar(false)} className="text-tinta-3 hover:text-tinta p-2 rounded-lg hover:bg-papel-3 transition-colors" title="Fechar opções" aria-label="Fechar opções">
+              <button type="button" onClick={() => setShowRightSidebar(false)} className="text-tinta-3 hover:text-tinta p-2 rounded-lg hover:bg-papel-3 transition-colors" title="Fechar configurações" aria-label="Fechar configurações">
                 <X size={16} />
               </button>
             </div>
